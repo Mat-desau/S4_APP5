@@ -22,8 +22,10 @@ def LectureToArray(NomFichier):
 
     return Audio_float32
 
-def Trouver32Sinus(Array):
-    return Array
+def Trouver32Sinus(Array, start, stop):
+    resize = Array[start:stop]
+
+    return resize
 
 def main():
     #Lecture des audio et mise en array
@@ -33,6 +35,9 @@ def main():
     #Redressement des audios
     Audio_Guitare_Redresser = abs(Audio_Guitare)
     Audio_Basson_Redresser = abs(Audio_Basson)
+
+    #7578
+    #64500
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
