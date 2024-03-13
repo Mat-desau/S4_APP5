@@ -57,7 +57,9 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     return Frequence_New, Signal_FFT_New, Maximum
 
-def
+def Coupe_Bande(Array):
+    
+
 
 def main():
     #Lecture des audio et mise en array
