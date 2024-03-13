@@ -7,7 +7,7 @@ from scipy.fft import fft
 import librosa as librosa
 
 #Boolean pour les fonctions
-Afficher_Graphique = True
+Afficher_Graphique = False
 Mise_A_Base_1 = True
 Mise_En_Log = True
 
@@ -57,9 +57,12 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     return Frequence_New, Signal_FFT_New, Maximum
 
-def Coupe_Bande(Array):
-    
+def Coupe_Bande(Array, Freq):
+    Signal = np.ones(4096)
+    Signal[1000] = 0
+    print(Signal)
 
+    return Array
 
 def main():
     #Lecture des audio et mise en array
@@ -70,9 +73,11 @@ def main():
     Audio_Guitare_Redresser = abs(Audio_Guitare)
     Audio_Basson_Redresser = abs(Audio_Basson)
 
-    Frequence_Guitare, Signal_FFT_Guitare, Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
+    Coupe_Bande(Audio_Basson)
 
-    Frequence_Basson, Signal_FFT_Basson, Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
+    #Frequence_Guitare, Signal_FFT_Guitare, Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
+
+    #Frequence_Basson, Signal_FFT_Basson, Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
