@@ -7,7 +7,7 @@ from scipy.fft import fft
 import librosa as librosa
 
 #Boolean pour les fonctions
-Afficher_Graphique = False
+Afficher_Graphique = True
 Mise_A_Base_1 = True
 Mise_En_Log = True
 
@@ -16,7 +16,7 @@ pi = np.pi
 
 def LectureToArray(NomFichier):
     # Read file to get buffer
-    _, Sample_Rate = librosa.load(NomFichier)
+    _, Sample_Rate = librosa.load(NomFichier, sr=None)
     Fichier = wave.open(NomFichier)
     Echantillon = Fichier.getnframes()
     Audio = Fichier.readframes(Echantillon)
@@ -28,7 +28,6 @@ def LectureToArray(NomFichier):
     if(Mise_A_Base_1):
         Audio_float32 = Audio_float32 / max(Audio_float32)
 
-    Sample_Rate = Sample_Rate * 2
     return Audio_float32, Sample_Rate
 
 def Trouver32Sinus(Array, Sample_Rate):
@@ -57,9 +56,17 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     return Frequence_New, Signal_FFT_New, Maximum
 
-def Coupe_Bande(Array, Freq):
-    Signal = np.ones(4096)
-    Signal[1000] = 0
+def Coupe_Bande(Array, Sample_Rate, N):
+    K = ((20 / (Sample_Rate / 2))*2) + (1/N)
+    t = np.linspace(-(N-1)/2,(N-1)/2,N)
+    h = (1/N) * (np.sin((pi * t * K) / N)/np.sin((pi * t) / N))
+
+    Signal = np.ones(N)
+
+    Fe = Sample_Rate / N
+    for i in range(980, 1020):
+        m = i / Fe
+
     print(Signal)
 
     return Array
@@ -73,11 +80,11 @@ def main():
     Audio_Guitare_Redresser = abs(Audio_Guitare)
     Audio_Basson_Redresser = abs(Audio_Basson)
 
-    Coupe_Bande(Audio_Basson)
+    Coupe_Bande(Audio_Basson, Sample_Rate_Basson, 4096)
 
-    #Frequence_Guitare, Signal_FFT_Guitare, Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
+    Frequence_Guitare, Signal_FFT_Guitare, Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
 
-    #Frequence_Basson, Signal_FFT_Basson, Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
+    Frequence_Basson, Signal_FFT_Basson, Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
@@ -114,9 +121,6 @@ def main():
             SUB6.set_ylabel('Amplitude')
         SUB6.set_xlabel('Fréquence')
         plt.show()
-
-
-
 
 if __name__ == '__main__':
     main()
