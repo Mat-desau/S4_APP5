@@ -7,7 +7,7 @@ from scipy.fft import fft
 import librosa as librosa
 
 #Boolean pour les fonctions
-Afficher_Graphique = True
+Afficher_Graphique = False
 Mise_A_Base_1 = True
 Mise_En_Log = True
 
@@ -57,17 +57,20 @@ def Trouver32Sinus(Array, Sample_Rate):
     return Frequence_New, Signal_FFT_New, Maximum
 
 def Coupe_Bande(Array, Sample_Rate, N):
-    K = ((20 / (Sample_Rate / 2))*2) + (1/N)
-    t = np.linspace(-(N-1)/2,(N-1)/2,N)
-    h = (1/N) * (np.sin((pi * t * K) / N)/np.sin((pi * t) / N))
+    w0 = 2 * pi * 1000 #en rad
+    w1 = 20 # en Hz
+    K = ((w1 / (Sample_Rate / 2))*2) + (1/N)
+    k = np.linspace(-(N-1)/2, (N-1)/2, N)
+    h = (1 / N) * (np.sin((pi * k * K)) / np.sin((pi * k) / N))
+    #h = (1/N) * (np.sin((pi * k * K) / N)/np.sin((pi * k) / N))            Voici la vrai formule mais avec cette formule ça marche pas
 
-    Signal = np.ones(N)
-
-    Fe = Sample_Rate / N
-    for i in range(980, 1020):
-        m = i / Fe
-
-    print(Signal)
+    F = 2 * h * np.cos(w0 * k)
+    Figure1, (SUB1, SUB2) = plt.subplots(2, 1)
+    SUB1.plot(k, h)
+    SUB2.plot(k, F)
+    plt.show()
+    print(len(F))
+    print(F)
 
     return Array
 
