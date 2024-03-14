@@ -85,17 +85,20 @@ def fir_win_comp(N, bw, window='rectangular', unwrap=True, freqnorm=2*numpy.pi):
     bw = 2.0 * bw + 1.0/N
     
     k = numpy.arange(N)
-    k_sym = numpy.linspace(-(N-1)/2,(N-1)/2,N)
+    k_sym = numpy.linspace(-(N-1)/2,(N-1)/2, N)
     # calcul analytique
     # avec repliement
-    analytique_fin = 1.0/N * numpy.sin(numpy.pi*k_sym * bw) / numpy.sin(numpy.pi*k_sym / N)
-    # sans repliement  
+    analytique_fin = 1.0/N * numpy.sin(numpy.pi*k_sym*bw) / numpy.sin(numpy.pi*k_sym / N)
+
+    # sans repliement
     analytique_inf = numpy.sin(numpy.pi * k_sym * bw)/numpy.pi/k_sym
+
     # lever divisions par 0 pour k == 0
     zero, = numpy.nonzero(k_sym == 0)
     if len(zero):
         analytique_fin[zero] = bw
         analytique_inf[zero] = bw
+
     # noramliser le gain DC a 1
     analytique_inf /= numpy.sum(analytique_inf)
 
