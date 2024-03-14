@@ -37,6 +37,7 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     Signal_FFT_New = Signal_FFT[0:int(len(Signal_FFT)/2)]
 
+    #yoyo
     if(Mise_En_Log):
         Signal_FFT_New = 20 * np.log10(np.abs(Signal_FFT_New))
 
