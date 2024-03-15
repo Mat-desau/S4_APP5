@@ -37,45 +37,58 @@ def Trouver32Sinus(Array, Sample_Rate):
     Signal_FFT = fft(Array_Hanning)   #Array FFT
 
     #Garder juste coté positif
-    Signal_FFT_New = Signal_FFT[0:int(len(Signal_FFT)/2)]   #Juste coté positif
-    Signal_FFT_New_Not_db = Signal_FFT  # Juste coté positif
+    Signal_FFT_Pos_db = Signal_FFT[0:int(len(Signal_FFT)/2)]   #Juste coté positif
+    Signal_FFT_Pos_Not_db = Signal_FFT  # Juste coté positif
 
     #Mise des données en LOG
     if(Mise_En_Log):
-        Signal_FFT_New = 20 * np.log10(np.abs(Signal_FFT_New)) #Mise en log
+        Signal_FFT_Pos_db = 20 * np.log10(Signal_FFT_Pos_db) #Mise en log
 
     #Normaliser les frequences
-    Frequence_New = np.linspace(0, 0.5, len(Signal_FFT_New)) * Sample_Rate  #Creation de la fréquence qui est en fonction du sample rate
-    Frequence_Full = np.linspace(0, 1, len(Signal_FFT_New_Not_db)) * Sample_Rate
+    Frequence_Pos = np.linspace(0, 0.5, len(Signal_FFT_Pos_db)) * Sample_Rate  #Creation de la fréquence qui est en fonction du sample rate
+    Frequence_Full = np.linspace(0, 1, len(Signal_FFT_Pos_Not_db)) * Sample_Rate    #Garder tout les fréquences
 
     #find peaks en utilisant la valeur maximale comme distance
-    Position_Maximum, _ = signal.find_peaks(Signal_FFT_New, distance=np.argmax(Signal_FFT_New)) #Find peaks en fonction du plus haut (Position en X)
-    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_New, height=(0.85 * np.max(Signal_FFT_New)), distance=40)   #Trouver Max en fonction de 10% (Position en X)
+    Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db))) #Find peaks en fonction du plus haut (Position en X)
+    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.85 * np.max(Signal_FFT_Pos_db)), distance=40)   #Trouver Max en fonction de 10% (Position en X)
 
     #Ajustement pour Basson
     if(Position_Maximum2[0] < Position_Maximum[0]):
-        Position_Maximum, _ = signal.find_peaks(Signal_FFT_New, distance = (Position_Maximum2[1] - Position_Maximum2[0]))   #Si jamais il a un plus petit avant le plus haut
-
-    #Position_Maximum, _ = signal.find_peaks(Signal_FFT_New, distance=np.argmax(Signal_FFT_New))
-    #Position_Maximum, _ = signal.find_peaks(Signal_FFT_New, )
+        Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance = (Position_Maximum2[1] - Position_Maximum2[0]))   #Si jamais il a un plus petit avant le plus haut
 
     #Garder juste les 32 premiers
     Position_Maximum = Position_Maximum[:32]    #Juste garder les 32 premiers index des max
 
-    Freq_Max = Frequence_New[Position_Maximum]  #Trouver les fréquences maximum et non juste les indexs
+    Freq_Max = Frequence_Pos[Position_Maximum]  #Trouver les fréquences maximum et non juste les indexs
 
-    return Frequence_New, Frequence_Full, Signal_FFT_New, Signal_FFT_New_Not_db, Position_Maximum, Freq_Max
+    return Frequence_Pos, Frequence_Full, Signal_FFT_Pos_db, Signal_FFT_Pos_Not_db, Position_Maximum, Freq_Max
 
-def Trouver_Enveloppe(Signal, Attente, Fstop, Fpass):
-    N = Calcul_N(Attente, Fstop, Fpass)   #Calcul du N avec la fonction du manuel
-    Passe_Bas_Valeur = Passe_Bas(2*len(Signal), int(N))   #Filtre passe Bas
-    Enveloppe = Passe_Bas_Valeur * Signal   #Trouver l'enveloppe
-    Enveloppe_Temps = np.fft.ifft(Enveloppe)    #Inverse pour la mettre en fontion du temps au lieu d'en fontion des fréquences
+def Trouver_Enveloppe(Signal, Sample_Rate):
+    Val_Passe_Bas = Calcul_N(100000, Sample_Rate)   #Calcul du N avec la fonction du manuel
 
-    return Enveloppe, Enveloppe_Temps, Passe_Bas_Valeur
+    Enveloppe_Temps = np.convolve(np.abs(Signal), Val_Passe_Bas, mode='same')
+    Enveloppe_Temps = Enveloppe_Temps / max(Enveloppe_Temps)
+    return Enveloppe_Temps
 
-def Calcul_N(Atten, Fstop_db, Fpass_db):
-    return Atten / (22 * (Fstop_db - Fpass_db)) #Formule du manuel
+def Calcul_N(Longeur_Echantillon, Sample_Rate):
+    DB3 = 10**(-3/20)   #Valeur de DB = 3
+    pos = int(((pi/1000)/(2*pi)) * Longeur_Echantillon) #Trouver la position à pi/1000
+
+    N = 1
+    gain = 1
+
+    while (gain > DB3):
+        h = np.ones(N) * (1/N)
+
+        H = fft(h, n=Longeur_Echantillon)
+
+        gain = H[pos]
+        N += 1
+
+    if(Afficher_Filtres):
+        plot1(np.linspace(0, Sample_Rate, Longeur_Echantillon), H, 'Passe-Bas')
+
+    return h
 
 def Passe_Bas(Len_Array, N):
     h = np.ones(N) * (1/N)
@@ -106,18 +119,98 @@ def Coupe_Bande(Array, Sample_Rate, N):
     SUB2.plot(k, h)
     plt.show()
 
+def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
+    Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]
+    Valeurs_K = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+    for i in range(len(Frequence_Differentes)):
+        if(Frequence_Differentes[i] > Frequence_Max[0] - 2 and Frequence_Differentes[i] < Frequence_Max[0] + 2):
+            for ii in range(len(Valeurs_K)):
+                Valeurs_K[ii] = Valeurs_K[ii] - i
+            break
+
+    DO = np.zeros(len(Signal))
+    DO_D = np.zeros(len(Signal))
+    RE = np.zeros(len(Signal))
+    RE_D = np.zeros(len(Signal))
+    MI = np.zeros(len(Signal))
+    FA = np.zeros(len(Signal))
+    FA_D = np.zeros(len(Signal))
+    SOL = np.zeros(len(Signal))
+    SOL_D = np.zeros(len(Signal))
+    LA = np.zeros(len(Signal))
+    LA_D = np.zeros(len(Signal))
+    SI = np.zeros(len(Signal))
+
+    for i in range(len(Frequence_Max)):
+        DO[int(Position_Frequence[i] * 2**(Valeurs_K[0]/12))] = np.abs(Signal[Position_Frequence[i]])
+        DO_Freq = Frequence_Max * 2**(Valeurs_K[0]/12)
+        DO_D[int(Position_Frequence[i] * 2**(Valeurs_K[1]/12))] = np.abs(Signal[Position_Frequence[i]])
+        DO_D_Freq = Frequence_Max * 2 ** (Valeurs_K[1] / 12)
+        RE[int(Position_Frequence[i] * 2**(Valeurs_K[2]/12))] = np.abs(Signal[Position_Frequence[i]])
+        RE_Freq = Frequence_Max * 2 ** (Valeurs_K[2] / 12)
+        RE_D[int(Position_Frequence[i] * 2**(Valeurs_K[3]/12))] = np.abs(Signal[Position_Frequence[i]])
+        RE_D_Freq = Frequence_Max * 2 ** (Valeurs_K[3] / 12)
+        MI[int(Position_Frequence[i] * 2**(Valeurs_K[4]/12))] = np.abs(Signal[Position_Frequence[i]])
+        MI_Freq = Frequence_Max * 2 ** (Valeurs_K[4] / 12)
+        FA[int(Position_Frequence[i] * 2**(Valeurs_K[5]/12))] = np.abs(Signal[Position_Frequence[i]])
+        FA_Freq = Frequence_Max * 2 ** (Valeurs_K[5] / 12)
+        FA_D[int(Position_Frequence[i] * 2**(Valeurs_K[6]/12))] = np.abs(Signal[Position_Frequence[i]])
+        FA_D_Freq = Frequence_Max * 2 ** (Valeurs_K[6] / 12)
+        SOL[int(Position_Frequence[i] * 2**(Valeurs_K[7]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SOL_Freq = Frequence_Max * 2 ** (Valeurs_K[7] / 12)
+        SOL_D[int(Position_Frequence[i] * 2**(Valeurs_K[8]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SOL_D_Freq = Frequence_Max * 2 ** (Valeurs_K[8] / 12)
+        LA[int(Position_Frequence[i] * 2**(Valeurs_K[9]/12))] = np.abs(Signal[Position_Frequence[i]])
+        LA_Freq = Frequence_Max * 2 ** (Valeurs_K[9] / 12)
+        LA_D[int(Position_Frequence[i] * 2**(Valeurs_K[10]/12))] = np.abs(Signal[Position_Frequence[i]])
+        LA_D_Freq = Frequence_Max * 2 ** (Valeurs_K[10] / 12)
+        SI[int(Position_Frequence[i] * 2**(Valeurs_K[11]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SI_Freq = Frequence_Max * 2 ** (Valeurs_K[11] / 12)
+
+    Figure, SUB = plt.subplots(3, 4)
+    SUB[0, 0].plot(Frequence, DO)
+    SUB[0, 1].plot(Frequence, DO_D)
+    SUB[0, 2].plot(Frequence, RE)
+    SUB[0, 3].plot(Frequence, RE_D)
+    SUB[1, 0].plot(Frequence, MI)
+    SUB[1, 1].plot(Frequence, FA)
+    SUB[1, 2].plot(Frequence, FA_D)
+    SUB[1, 3].plot(Frequence, SOL)
+    SUB[2, 0].plot(Frequence, SOL_D)
+    SUB[2, 1].plot(Frequence, LA)
+    SUB[2, 2].plot(Frequence, LA_D)
+    SUB[2, 3].plot(Frequence, SI)
+
+    SUB[0, 0].set_title('DO')
+    SUB[0, 1].set_title('DO_D')
+    SUB[0, 2].set_title('RE')
+    SUB[0, 3].set_title('RE_D')
+    SUB[1, 0].set_title('MI')
+    SUB[1, 1].set_title('FA')
+    SUB[1, 2].set_title('FA_D')
+    SUB[1, 3].set_title('SOL')
+    SUB[2, 0].set_title('SOL_D')
+    SUB[2, 1].set_title('LA')
+    SUB[2, 2].set_title('LA_D')
+    SUB[2, 3].set_title('SI')
+    #plt.show()
+
 def plot1(X1, Y1, Titre1):
     Figure1, SUB1 = plt.subplots(1, 1)
     SUB1.plot(X1, Y1)
     SUB1.set_title(Titre1)
-    plt.show()
+    #plt.show()
 
-def plot1_2(X1, Y1, X2, Y2, Titre1):
-    Figure1, SUB1 = plt.subplots(1, 1)
+def plot2_4(X1, Y1, X2, Y2, X3, Y3, X4, Y4, Titre1, Titre2):
+    Figure1, (SUB1, SUB2) = plt.subplots(2, 1)
     SUB1.plot(X1, Y1)
-    SUB1.plot(X2, "X", color='red')
+    SUB1.plot(X2, Y2, color='red')
     SUB1.set_title(Titre1)
-    plt.show()
+    SUB2.plot(X3, Y3)
+    SUB2.plot(X4, Y4, color='red')
+    SUB2.set_title(Titre2)
+    #plt.show()
 
 def plot2(X1, X2, Titre1, Titre2):
     Figure1, (SUB1, SUB2) = plt.subplots(2, 1)
@@ -125,7 +218,7 @@ def plot2(X1, X2, Titre1, Titre2):
     SUB1.set_title(Titre1)
     SUB2.plot(X2)
     SUB2.set_title(Titre2)
-    plt.show()
+    #plt.show()
 
 def plot2_2(X1, Y1, X2, Y2, Titre1, Titre2):
     Figure1, (SUB1, SUB2) = plt.subplots(2, 1)
@@ -133,7 +226,7 @@ def plot2_2(X1, Y1, X2, Y2, Titre1, Titre2):
     SUB1.set_title(Titre1)
     SUB2.plot(X2, Y2)
     SUB2.set_title(Titre2)
-    plt.show()
+    #plt.show()
 
 def plot3(X1, Y1, X2, Y2, X3, Y3, X4, Y4, Titre1, Titre2):
     Figure1, (SUB1, SUB2) = plt.subplots(2, 1)
@@ -143,7 +236,7 @@ def plot3(X1, Y1, X2, Y2, X3, Y3, X4, Y4, Titre1, Titre2):
     SUB2.plot(X2, Y2)
     SUB2.plot(X2[X4], Y4[X4], "X", color='red')
     SUB2.set_title(Titre2)
-    plt.show()
+    #plt.show()
 
 def main():
     #Lecture des audio et mise en array
@@ -156,29 +249,26 @@ def main():
 
     #Filtres
     #Coupe_Bande(Audio_Basson, Sample_Rate_Basson, 4096)
+    # Enveloppe
+    Enveloppe_Temps_Guitare = Trouver_Enveloppe(Audio_Guitare, Sample_Rate_Guitare)  # fois 2pi pour le mettre en Hz, puisque le reste est en Hertz
+    Enveloppe_Temps_Basson = Trouver_Enveloppe(Audio_Basson, Sample_Rate_Basson)
 
     #Trouver les 32 frequences
-    Frequence_Guitare, Frequence_FFT_Full_Guitare, Signal_FFT_Guitare, Signal_FFT_Not_db_Guitare, Positon_Maximum_Guitare, Frequence_Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
-    Frequence_Basson, Frequence_FFT_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
+    Frequence_Pos_Guitare, Frequence_Full_Guitare, Signal_FFT_Guitare, Signal_FFT_Not_db_Guitare, Positon_Maximum_Guitare, Frequence_Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
+    Frequence_Pos_Basson, Frequence_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
 
-    #Enveloppe
-    Enveloppe_Guitare, Enveloppe_Temps_Guitare, Passe_Bas_Valeur_Guitare = Trouver_Enveloppe(Signal_FFT_Not_db_Guitare, 3, (pi/1000)/(2*pi), 0) #fois 2pi pour le mettre en Hz, puisque le reste est en Hertz
-    Enveloppe_Basson, Enveloppe_Temps_Basson, Passe_Bas_Valeur_Basson = Trouver_Enveloppe(Signal_FFT_Not_db_Basson, 3, (pi/1000)/(2*pi), 0)
-
-    # Affichage
-    if (Afficher_Filtres):
-        plot1(Frequence_Guitare, np.abs(Passe_Bas_Valeur_Guitare), 'Filte Passe-Bas Guitare')
-        plot1(Frequence_Basson, np.abs(Passe_Bas_Valeur_Basson), 'Filte Passe-Bas Basson')
+    #Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
-        plot2(Audio_Guitare, Audio_Guitare_Redresser, 'Audio Guitare Normal', 'Audio Guitare Redresser')
-        plot2(Audio_Basson, Audio_Basson_Redresser, 'Audio Basson Normal', 'Audio Basson Redresser')
-        #plot2_2(Frequence_Guitare, Signal_FFT_Guitare, Frequence_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')
-        plot3(Frequence_Guitare, Signal_FFT_Guitare, Frequence_Basson, Signal_FFT_Basson, Positon_Maximum_Guitare, Signal_FFT_Guitare, Positon_Maximum_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')
-        plot2_2(Frequence_FFT_Full_Guitare, np.abs(Enveloppe_Guitare), Frequence_FFT_Full_Guitare, np.abs(Enveloppe_Temps_Guitare), 'Enveloppe Fréquence Guitare', 'Enveloppe Temps Guitare')
-        plot2_2(Frequence_FFT_Full_Basson, np.abs(Enveloppe_Basson), Frequence_FFT_Full_Basson, np.abs(Enveloppe_Temps_Basson), 'Enveloppe Fréquence Basson', 'Enveloppe Temps Basson')
-
+        #plot2(Audio_Guitare, Audio_Guitare_Redresser, 'Audio Guitare Normal', 'Audio Guitare Redresser')    #Audio de base
+        #plot2(Audio_Basson, Audio_Basson_Redresser, 'Audio Basson Normal', 'Audio Basson Redresser')        #Audio de base
+        #plot2_2(Frequence_Pos_Guitare, Signal_FFT_Guitare,  Frequence_Pos_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')  #Harmoniques sans le points
+        plot3(Frequence_Pos_Guitare, Signal_FFT_Guitare, Frequence_Pos_Basson, Signal_FFT_Basson, Positon_Maximum_Guitare, Signal_FFT_Guitare, Positon_Maximum_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')
+        #plot1(np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, 'Enveloppe Guitare')   #Enveloppe seul
+        #plot1(np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Enveloppe Basson')      #Enveloppe seul
+        plot2_4(np.arange(len(Audio_Guitare)), Audio_Guitare, np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, np.arange(len(Audio_Basson)), Audio_Basson, np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Guitare', 'Basson' )
+        plt.show()
 if __name__ == '__main__':
     main()
 
