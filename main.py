@@ -122,9 +122,9 @@ def Coupe_Bande(Array, Sample_Rate, N):
 def ifft(signal,max):
 
     pos = []
+    pos = np.append(pos, 0)
     neg = []
     sig = []
-    sig = np.append(sig, 0)
 
     val = 0
 
@@ -139,11 +139,8 @@ def ifft(signal,max):
         val = 0
 
     neg = pos[::-1]
-
-    print(len(neg))
-    print(len(pos))
-
-    sig = pos + neg
+    neg = neg[1::]
+    sig = np.concatenate((pos, neg))
     print(len(sig))
 
     sign_synth = np.fft.ifft(sig)
