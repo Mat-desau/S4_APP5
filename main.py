@@ -14,7 +14,7 @@ Afficher_Changement_Frequence = False
 Afficher_Filtres = False
 Mise_A_Base_1 = True
 Mise_En_Log = True
-Facteur_De_Grosseur = 20000
+Facteur_De_Grosseur = 200000
 
 #Valeur utiles
 pi = np.pi
