@@ -119,6 +119,38 @@ def Coupe_Bande(Array, Sample_Rate, N):
     SUB2.plot(k, h)
     plt.show()
 
+def ifft(signal,max):
+
+    pos = []
+    neg = []
+    sig = []
+    sig = np.append(sig, 0)
+
+    val = 0
+
+    for i in range(len(signal)):
+        for j in range(len(max)):
+            if(max[j]==signal[i]):
+                val = max[j]
+        if(val != 0):
+            pos = np.append(pos, val)
+        else:
+            pos = np.append(pos, 0)
+        val = 0
+
+    neg = pos[::-1]
+
+    print(len(neg))
+    print(len(pos))
+
+    sig = pos + neg
+    print(len(sig))
+
+    sign_synth = np.fft.ifft(sig)
+    print(len(sign_synth))
+
+    return sign_synth
+
 def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
     Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]
     Valeurs_K = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
@@ -257,7 +289,11 @@ def main():
     Frequence_Pos_Guitare, Frequence_Full_Guitare, Signal_FFT_Guitare, Signal_FFT_Not_db_Guitare, Positon_Maximum_Guitare, Frequence_Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
     Frequence_Pos_Basson, Frequence_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
 
-    #Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
+    #Synthese du son
+    Guitare_synth = ifft(Frequence_Pos_Guitare, Frequence_Maximum_Guitare)
+
+    #Changement de notes
+    Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
