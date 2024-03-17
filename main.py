@@ -327,7 +327,9 @@ def Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, DO, DO_D, RE, RE_
     print('absolute Syntth_DO', np.abs(Synth_DO))
     print('Syntth_DO_int', Synth_DO.astype(np.int16))
 
-    io.wavfile.write("DO.wav", Sample_Rate_Guitare, Synth_DO)
+    Synth_DO = np.abs(Synth_DO)
+
+    io.wavfile.write("DO.wav", Sample_Rate_Guitare, Synth_DO.astype(np.int16))
     #io.wavfile.write("DO_D.wav", Sample_Rate_Guitare, Synth_DO_D.astype(np.int16))
     #io.wavfile.write("RE.wav", Sample_Rate_Guitare, Synth_RE.astype(np.int16))
     #io.wavfile.write("RE_D.wav", Sample_Rate_Guitare, Synth_RE_D.astype(np.int16))
