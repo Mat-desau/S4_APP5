@@ -127,7 +127,7 @@ def ifft(Signal_FFT, max):
     pos = np.append(pos, 0)
     neg = []
     sig = []
-    print(max)
+    #print(max)
     val = 0
 
     for i in range(len(Signal_FFT)):
@@ -147,8 +147,8 @@ def ifft(Signal_FFT, max):
 
     sign_synth = fft.ifft(sig)
 
-    print(len(sign_synth))
-    print(sign_synth)
+    #print(len(sign_synth))
+    #print(sign_synth)
 
     return sign_synth[1::]
 
@@ -306,6 +306,40 @@ def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
     SI_int = SI.astype(int)
 
     return DO_int, DO_D_int, RE_int, RE_D_int, MI_int, FA_int, FA_D_int, SOL_int, SOL_D_int, LA_int, LA_D_int, SI_int
+
+def Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
+    # Synthese du son
+    print('DO', DO)
+    Synth_DO = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[DO]))
+    #Synth_DO_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[DO_D]))
+    #Synth_RE = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[RE]))
+    #Synth_RE_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[RE_D]))
+    #Synth_MI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[MI]))
+    #Synth_FA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[FA]))
+    #Synth_FA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[FA_D]))
+    #Synth_SOL = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SOL]))
+    #Synth_SOL_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SOL_D]))
+    #Synth_LA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA]))
+    #Synth_LA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA_D]))
+    #Synth_SI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SI]))
+
+    print('Syntth_DO', Synth_DO)
+    Synth_DO = np.abs(Synth_DO)
+    print('Syntth_DO_int', Synth_DO.astype(np.int16))
+
+    io.wavfile.write("DO.wav", Sample_Rate_Guitare, Synth_DO)
+    #io.wavfile.write("DO_D.wav", Sample_Rate_Guitare, Synth_DO_D.astype(np.int16))
+    #io.wavfile.write("RE.wav", Sample_Rate_Guitare, Synth_RE.astype(np.int16))
+    #io.wavfile.write("RE_D.wav", Sample_Rate_Guitare, Synth_RE_D.astype(np.int16))
+    #io.wavfile.write("MI.wav", Sample_Rate_Guitare, Synth_MI.astype(np.int16))
+    #io.wavfile.write("FA.wav", Sample_Rate_Guitare, Synth_FA.astype(np.int16))
+    #io.wavfile.write("FA_D.wav", Sample_Rate_Guitare, Synth_FA_D.astype(np.int16))
+    #io.wavfile.write("SOL.wav", Sample_Rate_Guitare, Synth_SOL.astype(np.int16))
+    #io.wavfile.write("SOL_D.wav", Sample_Rate_Guitare, Synth_SOL_D.astype(np.int16))
+    #io.wavfile.write("LA.wav", Sample_Rate_Guitare, Synth_LA.astype(np.int16))
+    #io.wavfile.write("LA_D.wav", Sample_Rate_Guitare, Synth_LA_D.astype(np.int16))
+    #io.wavfile.write("SI.wav", Sample_Rate_Guitare, Synth_SI.astype(np.int16))
+
 def plot1(X1, Y1, Titre1):
     Figure1, SUB1 = plt.subplots(1, 1)
     SUB1.plot(X1, Y1)
@@ -370,33 +404,8 @@ def main():
     #Changement de notes
     DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
 
-    # Synthese du son
-    print('DO', DO)
-    Synth_DO = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[DO]))
-    Synth_DO_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[DO_D]))
-    Synth_RE = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[RE]))
-    Synth_RE_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[RE_D]))
-    Synth_MI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[MI]))
-    Synth_FA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[FA]))
-    Synth_FA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[FA_D]))
-    Synth_SOL = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SOL]))
-    Synth_SOL_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SOL_D]))
-    Synth_LA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA]))
-    Synth_LA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA_D]))
-    Synth_SI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SI]))
+    Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
-    io.wavfile.write("DO.wav", Sample_Rate_Guitare, Synth_DO.astype(np.int16))
-    io.wavfile.write("DO_D.wav", Sample_Rate_Guitare, Synth_DO_D.astype(np.int16))
-    io.wavfile.write("RE.wav", Sample_Rate_Guitare, Synth_RE.astype(np.int16))
-    io.wavfile.write("RE_D.wav", Sample_Rate_Guitare, Synth_RE_D.astype(np.int16))
-    io.wavfile.write("MI.wav", Sample_Rate_Guitare, Synth_MI.astype(np.int16))
-    io.wavfile.write("FA.wav", Sample_Rate_Guitare, Synth_FA.astype(np.int16))
-    io.wavfile.write("FA_D.wav", Sample_Rate_Guitare, Synth_FA_D.astype(np.int16))
-    io.wavfile.write("SOL.wav", Sample_Rate_Guitare, Synth_SOL.astype(np.int16))
-    io.wavfile.write("SOL_D.wav", Sample_Rate_Guitare, Synth_SOL_D.astype(np.int16))
-    io.wavfile.write("LA.wav", Sample_Rate_Guitare, Synth_LA.astype(np.int16))
-    io.wavfile.write("LA_D.wav", Sample_Rate_Guitare, Synth_LA_D.astype(np.int16))
-    io.wavfile.write("SI.wav", Sample_Rate_Guitare, Synth_SI.astype(np.int16))
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
