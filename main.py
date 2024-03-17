@@ -17,7 +17,7 @@ pi = np.pi
 
 def LectureToArray(NomFichier):
     # Read file to get buffer
-    _, Sample_Rate = librosa.load(NomFichier, sr=None)
+    _, Sample_Rate = librosa.load(NomFichier, sr=None)                                                                  #Donne le sample rate en Hertz
     Fichier = wave.open(NomFichier)
     Echantillon = Fichier.getnframes()
     Audio = Fichier.readframes(Echantillon)
@@ -34,40 +34,41 @@ def LectureToArray(NomFichier):
 def Trouver32Sinus(Array, Sample_Rate):
     #Pour cree les harmoniques
     Array_Hanning = Array * np.hanning(len(Array))
-    Signal_FFT = fft(Array_Hanning)   #Array FFT
+    Signal_FFT = fft(Array_Hanning)                                                                                     #Array FFT qui est en fonction du nombre d'élémens et non en fréquence
 
     #Garder juste coté positif
-    Signal_FFT_Pos_db = Signal_FFT[0:int(len(Signal_FFT)/2)]   #Juste coté positif
-    Signal_FFT_Pos_Not_db = Signal_FFT  # Juste coté positif
+    Signal_FFT_Pos_db = Signal_FFT[0:int(len(Signal_FFT)/2)]                                                            #Juste coté positif
+    Signal_FFT_Pos_Not_db = Signal_FFT                                                                                  #Juste coté positif
 
     #Mise des données en LOG
     if(Mise_En_Log):
-        Signal_FFT_Pos_db = 20 * np.log10(Signal_FFT_Pos_db) #Mise en log
+        Signal_FFT_Pos_db = 20 * np.log10(Signal_FFT_Pos_db)                                                            #Mise en log
 
     #Normaliser les frequences
-    Frequence_Pos = np.linspace(0, 0.5, len(Signal_FFT_Pos_db)) * Sample_Rate  #Creation de la fréquence qui est en fonction du sample rate
-    Frequence_Full = np.linspace(0, 1, len(Signal_FFT_Pos_Not_db)) * Sample_Rate    #Garder tout les fréquences
+    Frequence_Pos = np.linspace(0, 0.5, len(Signal_FFT_Pos_db)) * Sample_Rate                                           #Creation de la fréquence qui est en fonction du sample rate
+    Frequence_Full = np.linspace(0, 1, len(Signal_FFT_Pos_Not_db)) * Sample_Rate                                        #Garder tout les fréquences
 
     #find peaks en utilisant la valeur maximale comme distance
-    Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db))) #Find peaks en fonction du plus haut (Position en X)
-    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.85 * np.max(Signal_FFT_Pos_db)), distance=40)   #Trouver Max en fonction de 10% (Position en X)
+    Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db)))              #Find peaks en fonction du plus haut (Position en X)
+    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.85 * np.max(Signal_FFT_Pos_db)), distance=40) #Trouver Max en fonction de 10% (Position en X)
 
     #Ajustement pour Basson
     if(Position_Maximum2[0] < Position_Maximum[0]):
         Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance = (Position_Maximum2[1] - Position_Maximum2[0]))   #Si jamais il a un plus petit avant le plus haut
 
     #Garder juste les 32 premiers
-    Position_Maximum = Position_Maximum[:32]    #Juste garder les 32 premiers index des max
+    Position_Maximum = Position_Maximum[:32]                                                                            #Juste garder les 32 premiers index des max
 
-    Freq_Max = Frequence_Pos[Position_Maximum]  #Trouver les fréquences maximum et non juste les indexs
+    Freq_Max = Frequence_Pos[Position_Maximum]                                                                          #Ressortir les fréquences maximum et non juste les indexs
 
     return Frequence_Pos, Frequence_Full, Signal_FFT_Pos_db, Signal_FFT_Pos_Not_db, Position_Maximum, Freq_Max
 
 def Trouver_Enveloppe(Signal, Sample_Rate):
     Val_Passe_Bas = Calcul_N(100000, Sample_Rate)   #Calcul du N avec la fonction du manuel
 
-    Enveloppe_Temps = np.convolve(np.abs(Signal), Val_Passe_Bas, mode='same')
-    Enveloppe_Temps = Enveloppe_Temps / max(Enveloppe_Temps)
+    Enveloppe_Temps = np.convolve(np.abs(Signal), Val_Passe_Bas, mode='same')   #Trouver l'envvlopper de temps en utilisant une convolution
+    Enveloppe_Temps = Enveloppe_Temps / max(Enveloppe_Temps)    #
+
     return Enveloppe_Temps
 
 def Calcul_N(Longeur_Echantillon, Sample_Rate):
@@ -97,19 +98,19 @@ def Passe_Bas(Len_Array, N):
     return h
 
 def Coupe_Bande(Array, Sample_Rate, N):
-    w0 = 2 * pi * 1000 #en rad
-    w1 = 20 # en Hz
-    K = (((w1/Sample_Rate) * 2) * 2) + (1/N)
-    k = np.linspace(-(N-1)/2, (N-1)/2, N)
+    Freq_Base = 2 * pi * 1000 #en rad (W0)
+    Freq = 20 # en Hz W1
+    K = (((Freq/Sample_Rate) * 2) * 2) + (1/N)  #Grand K de la formule
+    k = np.linspace(-(N-1)/2, (N-1)/2, N)   #Petit k de la formule
 
     h = (1 / N) * (np.sin(pi * k * K) / np.sin((pi * k) / N))
     #h = (1 / N) * (np.sin((pi * k * K) / N)/np.sin((pi * k) / N))            # Voici la vrai formule mais avec cette formule ça marche pas
 
-    diract = np.zeros(N)
-    diract[int(N / 2)] = 1
+    diract = np.zeros(N)    #Test Diract
+    diract[int(N / 2)] = 1  #Test Diract
 
-    #F = diract - 2 * h * np.cos(w0 * k)
-    F = - 2 * h * np.cos(w0 * k)
+    #F = diract - 2 * h * np.cos(w0 * k)        #Avec Diract mais marche pas trop
+    F = - 2 * h * np.cos(Freq_Base * k)         #Comme equation mais sans Diract (Passe Bande negatif)
 
     Valeur_FFT = np.fft.fftshift(np.fft.fft(h))
     Valeur_FFT_Freq = (np.fft.fftshift(np.fft.fftfreq(N))) * Sample_Rate
