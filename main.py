@@ -2,7 +2,7 @@
 import numpy as np
 import wave
 import matplotlib.pyplot as plt
-from scipy import io
+from scipy.io.wavfile import write
 from scipy import signal
 import numpy.fft as fft
 #from scipy.fft import fft
@@ -12,7 +12,7 @@ import librosa as librosa
 Afficher_Graphique = False
 Afficher_Changement_Frequence = False
 Afficher_Filtres = False
-Mise_A_Base_1 = False
+Mise_A_Base_1 = True
 Mise_En_Log = True
 
 #Valeur utiles
@@ -329,9 +329,9 @@ def Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, DO, DO_D, RE, RE_
 
     Synth_DO = np.abs(Synth_DO)
 
-    io.wavfile.write("DO.wav", Sample_Rate_Guitare, Synth_DO.astype(np.int16))
-    #io.wavfile.write("DO_D.wav", Sample_Rate_Guitare, Synth_DO_D.astype(np.int16))
-    #io.wavfile.write("RE.wav", Sample_Rate_Guitare, Synth_RE.astype(np.int16))
+    write("DO.wav", Sample_Rate_Guitare, Synth_DO.astype(np.int16))
+    #write("DO_D.wav", Sample_Rate_Guitare, Synth_DO_D.astype(np.int16))
+    #write("RE.wav", Sample_Rate_Guitare, Synth_RE.astype(np.int16))
     #io.wavfile.write("RE_D.wav", Sample_Rate_Guitare, Synth_RE_D.astype(np.int16))
     #io.wavfile.write("MI.wav", Sample_Rate_Guitare, Synth_MI.astype(np.int16))
     #io.wavfile.write("FA.wav", Sample_Rate_Guitare, Synth_FA.astype(np.int16))
@@ -408,6 +408,16 @@ def main():
 
     Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
+    samplerate = 44100;
+    fs = 100
+
+    t = np.linspace(0., 1., samplerate)
+
+    amplitude = np.iinfo(np.int16).max
+
+    data = amplitude * np.sin(2. * np.pi * fs * t)
+
+    write("example.wav", samplerate, data.astype(np.int16))
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
