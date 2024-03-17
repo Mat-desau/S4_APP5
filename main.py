@@ -3,7 +3,8 @@ import numpy as np
 import wave
 import matplotlib.pyplot as plt
 from scipy import signal
-from scipy.fft import fft
+import numpy.fft as fft
+#from scipy.fft import fft
 import librosa as librosa
 
 #Boolean pour les fonctions
@@ -34,11 +35,11 @@ def LectureToArray(NomFichier):
 def Trouver32Sinus(Array, Sample_Rate):
     #Pour cree les harmoniques
     Array_Hanning = Array * np.hanning(len(Array))
-    Signal_FFT = fft(Array_Hanning)   #Array FFT
+    Signal_FFT = fft.fft(Array_Hanning)   #Array FFT
 
     #Garder juste coté positif
     Signal_FFT_Pos_db = Signal_FFT[0:int(len(Signal_FFT)/2)]   #Juste coté positif
-    Signal_FFT_Pos_Not_db = Signal_FFT  # Juste coté positif
+    Signal_FFT_Pos_Not_db = Signal_FFT[0:int(len(Signal_FFT)/2)]  # Juste coté positif
 
     #Mise des données en LOG
     if(Mise_En_Log):
@@ -80,7 +81,7 @@ def Calcul_N(Longeur_Echantillon, Sample_Rate):
     while (gain > DB3):
         h = np.ones(N) * (1/N)
 
-        H = fft(h, n=Longeur_Echantillon)
+        H = fft.fft(h, n=Longeur_Echantillon)
 
         gain = H[pos]
         N += 1
@@ -111,26 +112,25 @@ def Coupe_Bande(Array, Sample_Rate, N):
     #F = diract - 2 * h * np.cos(w0 * k)
     F = - 2 * h * np.cos(w0 * k)
 
-    Valeur_FFT = np.fft.fftshift(np.fft.fft(h))
-    Valeur_FFT_Freq = (np.fft.fftshift(np.fft.fftfreq(N))) * Sample_Rate
+    Valeur_FFT = fft.fftshift(np.fft.fft(h))
+    Valeur_FFT_Freq = (fft.fftshift(np.fft.fftfreq(N))) * Sample_Rate
 
     Figure1, (SUB1, SUB2) = plt.subplots(2, 1)
     SUB1.plot(Valeur_FFT_Freq, np.abs(Valeur_FFT))
     SUB2.plot(k, h)
     plt.show()
 
-def ifft(signal,max):
-
+def ifft(signal, max):
     pos = []
     pos = np.append(pos, 0)
     neg = []
     sig = []
-
+    print(max)
     val = 0
 
     for i in range(len(signal)):
         for j in range(len(max)):
-            if(max[j]==signal[i]):
+            if(max[j] == signal[i]):
                 val = max[j]
         if(val != 0):
             pos = np.append(pos, val)
@@ -138,15 +138,17 @@ def ifft(signal,max):
             pos = np.append(pos, 0)
         val = 0
 
-    neg = pos[::-1]
-    neg = neg[1::]
+    neg = pos[1::]
+    neg = neg[::-1]
+
     sig = np.concatenate((pos, neg))
-    print(len(sig))
 
-    sign_synth = np.fft.ifft(sig)
+    sign_synth = fft.ifft(sig)
+
     print(len(sign_synth))
+    print(sign_synth)
 
-    return sign_synth
+    return sign_synth[1::]
 
 def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
     Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]
@@ -287,7 +289,8 @@ def main():
     Frequence_Pos_Basson, Frequence_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
 
     #Synthese du son
-    Guitare_synth = ifft(Frequence_Pos_Guitare, Frequence_Maximum_Guitare)
+    Guitare_synth = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[Positon_Maximum_Guitare]))
+
 
     #Changement de notes
     Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
