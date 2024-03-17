@@ -12,7 +12,7 @@ import librosa as librosa
 Afficher_Graphique = False
 Afficher_Changement_Frequence = False
 Afficher_Filtres = False
-Mise_A_Base_1 = True
+Mise_A_Base_1 = False
 Mise_En_Log = True
 
 #Valeur utiles
@@ -324,7 +324,7 @@ def Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, DO, DO_D, RE, RE_
     #Synth_SI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SI]))
 
     print('Syntth_DO', Synth_DO)
-    Synth_DO = np.abs(Synth_DO)
+    print('absolute Syntth_DO', np.abs(Synth_DO))
     print('Syntth_DO_int', Synth_DO.astype(np.int16))
 
     io.wavfile.write("DO.wav", Sample_Rate_Guitare, Synth_DO)
