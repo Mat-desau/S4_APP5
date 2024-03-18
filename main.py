@@ -9,10 +9,12 @@ import numpy.fft as fft
 import librosa as librosa
 
 #Boolean pour les fonctions
-Afficher_Graphique = False
-Afficher_Changement_Frequence = False
+Afficher_Graphique = True
+Afficher_Graphique_Changement_Frequence = False
 Afficher_Filtres = False
-Print_Valeurs = True
+Print_Valeurs = False
+Print_Tableau_Freq_Notes = False
+Print_Tableau_Ampliude_Notes = False
 Mise_A_Base_1 = True
 Mise_En_Log = True
 Facteur_De_Grosseur = 250
@@ -22,7 +24,7 @@ pi = np.pi
 
 def LectureToArray(NomFichier):
     # Read file to get buffer
-    _, Sample_Rate = librosa.load(NomFichier, sr=None)
+    _, Sample_Rate = librosa.load(NomFichier, sr=None)                                                                  #Lecture du sample Rate
     Fichier = wave.open(NomFichier)
     Echantillon = Fichier.getnframes()
     Audio = Fichier.readframes(Echantillon)
@@ -31,32 +33,32 @@ def LectureToArray(NomFichier):
     Audio_int16 = np.frombuffer(Audio, dtype=np.int16)
     Audio_float32 = Audio_int16.astype(np.float32)
 
-    Max = max(Audio_float32)
+    Max = max(Audio_float32)                                                                                            #Garder en mémoire le Max
 
     if(Mise_A_Base_1):
-        Audio_float32 = Audio_float32 / max(Audio_float32)
+        Audio_float32 = Audio_float32 / max(Audio_float32)                                                              #Normaliser à 1
 
     return Audio_float32, Sample_Rate, Max
 
 def Trouver32Sinus(Array, Sample_Rate):
     #Pour cree les harmoniques
     Array_Hanning = Array * np.hanning(len(Array))
-    Signal_FFT = fft.fft(Array_Hanning)   #Array FFT
+    Signal_FFT = fft.fft(Array_Hanning)                                                                                 #Array FFT
 
     #Garder juste coté positif
-    Signal_FFT_Pos_db = Signal_FFT[0:int(len(Signal_FFT)/2)]   #Juste coté positif
-    Signal_FFT_Pos_Not_db = Signal_FFT[0:int(len(Signal_FFT)/2)]  # Juste coté positif
+    Signal_FFT_Pos_db = Signal_FFT[0:int(len(Signal_FFT)/2)]                                                            #Juste coté positif
+    Signal_FFT_Pos_Not_db = Signal_FFT[0:int(len(Signal_FFT)/2)]                                                        #Juste coté positif
 
     #Mise des données en LOG
     if(Mise_En_Log):
-        Signal_FFT_Pos_db = 20 * np.log10(Signal_FFT_Pos_db) #Mise en log
+        Signal_FFT_Pos_db = 20 * np.log10(Signal_FFT_Pos_db)                                                            #Mise en log
 
     #Normaliser les frequences
-    Frequence_Pos = np.linspace(0, 0.5, len(Signal_FFT_Pos_db)) * Sample_Rate  #Creation de la fréquence qui est en fonction du sample rate
-    Frequence_Full = np.linspace(0, 1, len(Signal_FFT_Pos_Not_db)) * Sample_Rate    #Garder tout les fréquences
+    Frequence_Pos = np.linspace(0, 0.5, len(Signal_FFT_Pos_db)) * Sample_Rate                                           #Creation de la fréquence qui est en fonction du sample rate
+    Frequence_Full = np.linspace(0, 1, len(Signal_FFT_Pos_Not_db)) * Sample_Rate                                        #Garder tout les fréquences
 
     #find peaks en utilisant la valeur maximale comme distance
-    Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db))) #Find peaks en fonction du plus haut (Position en X)
+    Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db)))              #Find peaks en fonction du plus haut (Position en X)
     Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.85 * np.max(Signal_FFT_Pos_db)), distance=40)   #Trouver Max en fonction de 10% (Position en X)
 
     #Ajustement pour Basson
@@ -64,22 +66,22 @@ def Trouver32Sinus(Array, Sample_Rate):
         Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance = (Position_Maximum2[1] - Position_Maximum2[0]))   #Si jamais il a un plus petit avant le plus haut
 
     #Garder juste les 32 premiers
-    Position_Maximum = Position_Maximum[:32]    #Juste garder les 32 premiers index des max
+    Position_Maximum = Position_Maximum[:32]                                                                            #Juste garder les 32 premiers index des max
 
-    Freq_Max = Frequence_Pos[Position_Maximum]  #Trouver les fréquences maximum et non juste les indexs
+    Freq_Max = Frequence_Pos[Position_Maximum]                                                                          #Trouver les fréquences maximum et non juste les indexs
 
     return Frequence_Pos, Frequence_Full, Signal_FFT_Pos_db, Signal_FFT_Pos_Not_db, Position_Maximum, Freq_Max
 
 def Trouver_Enveloppe(Signal, Sample_Rate):
-    Val_Passe_Bas = Calcul_N(100000, Sample_Rate)   #Calcul du N avec la fonction du manuel
+    Val_Passe_Bas = Calcul_N(100000, Sample_Rate)                                                                       #Calcul du N avec la fonction du manuel
 
-    Enveloppe_Temps = np.convolve(np.abs(Signal), Val_Passe_Bas, mode='same')
-    Enveloppe_Temps = Enveloppe_Temps / max(Enveloppe_Temps)
+    Enveloppe_Temps = np.convolve(np.abs(Signal), Val_Passe_Bas, mode='same')                                           #Creation enveloppe temporelle en utilisant la convolution
+    Enveloppe_Temps = Enveloppe_Temps / max(Enveloppe_Temps)                                                            #Normaliser à 1 l'enveloppe temporelle
     return Enveloppe_Temps
 
 def Calcul_N(Longeur_Echantillon, Sample_Rate):
-    DB3 = 10**(-3/20)   #Valeur de DB = 3
-    pos = int(((pi/1000)/(2*pi)) * Longeur_Echantillon) #Trouver la position à pi/1000
+    DB3 = 10**(-3/20)                                                                                                   #Valeur de DB = 3
+    pos = int(((pi/1000)/(2*pi)) * Longeur_Echantillon)                                                                 #Trouver la position à pi/1000
 
     N = 1
     gain = 1
@@ -93,7 +95,7 @@ def Calcul_N(Longeur_Echantillon, Sample_Rate):
         N += 1
 
     if(Afficher_Filtres):
-        plot1(np.linspace(0, Sample_Rate, Longeur_Echantillon), H, 'Passe-Bas')
+        plot1(np.linspace(0, Sample_Rate, Longeur_Echantillon), H, 'Passe-Bas')                                         #Affichage des graphiques
 
     return h
 
@@ -126,204 +128,22 @@ def Coupe_Bande(Sample_Rate, N):
     SUB2.plot(k, h)
     plt.show()
 
-def ifft_PAS_UTILISER(Signal_FFT, max, Plus_Gros, Enveloppe):
-    positif = []
-    positif = np.append(positif, 0)
-    val = 0
-
-    for i in range(len(Signal_FFT)):
-        for j in range(len(max)):
-            if(max[j] == Signal_FFT[i]):
-                val = max[j]
-        if(val != 0):
-            positif = np.append(positif, val)
-        else:
-            positif = np.append(positif, 0)
-        val = 0
-
-    negatif = positif[1::]
-    negatif = negatif[::-1]
-
-    sig = np.concatenate((positif, negatif))
-
-    sign_synth = fft.irfft(positif, n=160000)
-
-    sign_synth = sign_synth * Enveloppe * Plus_Gros * Facteur_De_Grosseur
-
-    sign_synth = sign_synth.astype(np.int16)
-
-    return sign_synth
-
 def ifft(Signal_FFT, Maximum, Enveloppe):
-    Signal_IRFFT = fft.irfft(Signal_FFT, n=160000)
+    Signal_IRFFT = fft.irfft(Signal_FFT, n=160000)                                                                      #Creation de irfft avec uniquement les reels
 
-    Signal_IRFFT = Signal_IRFFT * Enveloppe * Maximum * Facteur_De_Grosseur
+    Signal_IRFFT = Signal_IRFFT * Enveloppe * Maximum * Facteur_De_Grosseur                                             #Ajutement du signal avec le son
 
     return Signal_IRFFT
 
-def Changer_Son_PAS_UTILISER(Frequence_Max, Position_Frequence, Frequence, Signal):
-    Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]
-    Valeurs_K = [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1]
-
-    #Trouver c'est quoi la fréquence d'entrée pour ajuster le k
-    #for i in range(len(Frequence_Differentes)):
-        #if(Frequence_Differentes[i] > Frequence_Max[0] - 2 and Frequence_Differentes[i] < Frequence_Max[0] + 2):
-            #for ii in range(len(Valeurs_K)):
-                #Valeurs_K[ii] = Valeurs_K[ii] - i
-            #break
-
-    #initialisaion des tableau
-    DO = np.zeros(len(Frequence_Max))
-    DO_D = np.zeros(len(Frequence_Max))
-    RE = np.zeros(len(Frequence_Max))
-    RE_D = np.zeros(len(Frequence_Max))
-    MI = np.zeros(len(Frequence_Max))
-    FA = np.zeros(len(Frequence_Max))
-    FA_D = np.zeros(len(Frequence_Max))
-    SOL = np.zeros(len(Frequence_Max))
-    SOL_D = np.zeros(len(Frequence_Max))
-    LA = np.zeros(len(Frequence_Max))
-    LA_D = np.zeros(len(Frequence_Max))
-    SI = np.zeros(len(Frequence_Max))
-
-    #Toute trouver les fréquences et les chnger de places
-    for i in range(len(Frequence_Max)):
-        DO[i] = Position_Frequence[i] * (2**((Valeurs_K[0])/12))
-        DO_Freq = Frequence_Max * 2**(Valeurs_K[0]/12)
-
-        DO_D[i] = Position_Frequence[i] * (2**((Valeurs_K[1])/12))
-        DO_D_Freq = Frequence_Max * 2 ** (Valeurs_K[1] / 12)
-
-        RE[i] = Position_Frequence[i] * (2**((Valeurs_K[2])/12))
-        RE_Freq = Frequence_Max * 2 ** (Valeurs_K[2] / 12)
-
-        RE_D[i] = Position_Frequence[i] * (2**((Valeurs_K[3])/12))
-        RE_D_Freq = Frequence_Max * 2 ** (Valeurs_K[3] / 12)
-
-        MI[i] = Position_Frequence[i] * (2**((Valeurs_K[4])/12))
-        MI_Freq = Frequence_Max * 2 ** (Valeurs_K[4] / 12)
-
-        FA[i] = Position_Frequence[i] * (2**((Valeurs_K[5])/12))
-        FA_Freq = Frequence_Max * 2 ** (Valeurs_K[5] / 12)
-
-        FA_D[i] = Position_Frequence[i] * (2**((Valeurs_K[6])/12))
-        FA_D_Freq = Frequence_Max * 2 ** (Valeurs_K[6] / 12)
-
-        SOL[i] = Position_Frequence[i] * (2**((Valeurs_K[7])/12))
-        SOL_Freq = Frequence_Max * 2 ** (Valeurs_K[7] / 12)
-
-        SOL_D[i] = Position_Frequence[i] * (2**((Valeurs_K[8])/12))
-        SOL_D_Freq = Frequence_Max * 2 ** (Valeurs_K[8] / 12)
-
-        LA[i] = Position_Frequence[i] * (2**((Valeurs_K[9])/12))
-        LA_Freq = Frequence_Max * 2 ** (Valeurs_K[9] / 12)
-
-        LA_D[i] = Position_Frequence[i] * (2**((Valeurs_K[10])/12))
-        LA_D_Freq = Frequence_Max * 2 ** (Valeurs_K[10] / 12)
-
-        SI[i] = Position_Frequence[i] * (2**((Valeurs_K[11])/12))
-        #SI[int(Position_Frequence[i] * 2 ** (Valeurs_K[11] / 12))] = np.abs(Signal[Position_Frequence[i]])
-        SI_Freq = Frequence_Max * 2 ** (Valeurs_K[11] / 12)
-
-    # affichage
-    Print_Tableau_Freq = False
-    Print_Tableau = False
-    if (Print_Tableau_Freq):
-        print('DO', DO_Freq)
-        print('DO_D', DO_D_Freq)
-        print('RE', RE_Freq)
-        print('RE_D', RE_D_Freq)
-        print('MI', MI_Freq)
-        print('FA', FA_Freq)
-        print('FA_D', FA_D_Freq)
-        print('SOL', SOL_Freq)
-        print('SOL_D', SOL_D_Freq)
-        print('LA', LA_Freq)
-        print('LA_D', LA_D_Freq)
-        print('SI', SI_Freq)
-
-    if (Print_Tableau):
-        print('DO', DO)
-        print('DO_D', DO_D)
-        print('RE', RE)
-        print('RE_D', RE_D)
-        print('MI', MI)
-        print('FA', FA)
-        print('FA_D', FA_D)
-        print('SOL', SOL)
-        print('SOL_D', SOL_D)
-        print('LA', LA)
-        print('LA_D', LA_D)
-        print('SI', SI)
-
-    # Enlever les Zeros
-    DO = DO[DO != 0]
-    DO_D = DO_D[DO_D != 0]
-    RE = RE[RE != 0]
-    RE_D = RE_D[RE_D != 0]
-    MI = MI[MI != 0]
-    FA = FA[FA != 0]
-    FA_D = FA_D[FA_D != 0]
-    SOL = SOL[SOL != 0]
-    SOL_D = SOL_D[SOL_D != 0]
-    LA = LA[LA != 0]
-    LA_D = LA_D[LA_D != 0]
-    SI = SI[SI != 0]
-
-    if(Afficher_Changement_Frequence):
-        Figure, SUB = plt.subplots(3, 4)
-        SUB[0, 0].plot(Frequence, DO)
-        SUB[0, 1].plot(Frequence, DO_D)
-        SUB[0, 2].plot(Frequence, RE)
-        SUB[0, 3].plot(Frequence, RE_D)
-        SUB[1, 0].plot(Frequence, MI)
-        SUB[1, 1].plot(Frequence, FA)
-        SUB[1, 2].plot(Frequence, FA_D)
-        SUB[1, 3].plot(Frequence, SOL)
-        SUB[2, 0].plot(Frequence, SOL_D)
-        SUB[2, 1].plot(Frequence, LA)
-        SUB[2, 2].plot(Frequence, LA_D)
-        SUB[2, 3].plot(Frequence, SI)
-
-        SUB[0, 0].set_title('DO')
-        SUB[0, 1].set_title('DO_D')
-        SUB[0, 2].set_title('RE')
-        SUB[0, 3].set_title('RE_D')
-        SUB[1, 0].set_title('MI')
-        SUB[1, 1].set_title('FA')
-        SUB[1, 2].set_title('FA_D')
-        SUB[1, 3].set_title('SOL')
-        SUB[2, 0].set_title('SOL_D')
-        SUB[2, 1].set_title('LA')
-        SUB[2, 2].set_title('LA_D')
-        SUB[2, 3].set_title('SI')
-        #plt.show()
-
-    #Mettre en int
-    DO_int = DO.astype(int)
-    DO_D_int = DO_D.astype(int)
-    RE_int = RE.astype(int)
-    RE_D_int = RE_D.astype(int)
-    MI_int = MI.astype(int)
-    FA_int = FA.astype(int)
-    FA_D_int = FA_D.astype(int)
-    SOL_int = SOL.astype(int)
-    SOL_D_int = SOL_D.astype(int)
-    LA_int = LA.astype(int)
-    LA_D_int = LA_D.astype(int)
-    SI_int = SI.astype(int)
-
-    return DO_int, DO_D_int, RE_int, RE_D_int, MI_int, FA_int, FA_D_int, SOL_int, SOL_D_int, LA_int, LA_D_int, SI_int
-
-def Changer_Son2(Frequence_Max, Position_Frequence, Frequence, Signal):
-    Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]
-    Valeurs_K = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
+    Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]                                #Frequence de chaque type
+    Valeurs_K = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]                                                                  #Tableau des valeur non changer
 
     #Trouver c'est quoi la fréquence d'entrée pour ajuster le k
     for i in range(len(Frequence_Differentes)):
-        if(Frequence_Differentes[i] > Frequence_Max[0] - 2 and Frequence_Differentes[i] < Frequence_Max[0] + 2):
+        if(Frequence_Differentes[i] > Frequence_Max[0] - 2 and Frequence_Differentes[i] < Frequence_Max[0] + 2):        #Trouver c'est quoi avec +- 2 Hz
             for ii in range(len(Valeurs_K)):
-                Valeurs_K[ii] = Valeurs_K[ii] - i
+                Valeurs_K[ii] = Valeurs_K[ii] - i                                                                       #Ajuster les Valeur_K en fonction de la fréquence trouver
             break
 
     #initialisaion des tableau
@@ -340,7 +160,7 @@ def Changer_Son2(Frequence_Max, Position_Frequence, Frequence, Signal):
     LA_D = np.zeros(len(Signal))
     SI = np.zeros(len(Signal))
 
-    #Toute trouver les fréquences et les chnger de places
+    #Toute trouver les fréquences et les changer de places
     for i in range(len(Frequence_Max)):
         DO[int(Position_Frequence[i] * 2**(Valeurs_K[0]/12))] = np.abs(Signal[Position_Frequence[i]])
         DO_Freq = Frequence_Max * 2**(Valeurs_K[0]/12)
@@ -378,25 +198,22 @@ def Changer_Son2(Frequence_Max, Position_Frequence, Frequence, Signal):
         SI[int(Position_Frequence[i] * 2**(Valeurs_K[11]/12))] = np.abs(Signal[Position_Frequence[i]])
         SI_Freq = Frequence_Max * 2 ** (Valeurs_K[11] / 12)
 
-    #affichage
-    Print_Tableau_Freq = False
-    Print_Tableau = False
+    #Affichage
+    if(Print_Tableau_Freq_Notes):
+        print('DO Freq', DO_Freq)
+        print('DO_D Freq', DO_D_Freq)
+        print('RE Freq', RE_Freq)
+        print('RE_D Freq', RE_D_Freq)
+        print('MI Freq', MI_Freq)
+        print('FA Freq', FA_Freq)
+        print('FA_D Freq', FA_D_Freq)
+        print('SOL Freq', SOL_Freq)
+        print('SOL_D Freq', SOL_D_Freq)
+        print('LA Freq', LA_Freq)
+        print('LA_D Freq', LA_D_Freq)
+        print('SI Freq', SI_Freq)
 
-    if(Print_Tableau_Freq):
-        print('DO', DO_Freq)
-        print('DO_D', DO_D_Freq)
-        print('RE', RE_Freq)
-        print('RE_D', RE_D_Freq)
-        print('MI', MI_Freq)
-        print('FA', FA_Freq)
-        print('FA_D', FA_D_Freq)
-        print('SOL', SOL_Freq)
-        print('SOL_D', SOL_D_Freq)
-        print('LA', LA_Freq)
-        print('LA_D', LA_D_Freq)
-        print('SI', SI_Freq)
-
-    if (Print_Tableau):
+    if (Print_Tableau_Ampliude_Notes):
         print('DO', DO)
         print('DO_D', DO_D)
         print('RE', RE)
@@ -410,7 +227,7 @@ def Changer_Son2(Frequence_Max, Position_Frequence, Frequence, Signal):
         print('LA_D', LA_D)
         print('SI', SI)
 
-    if(Afficher_Changement_Frequence):
+    if(Afficher_Graphique_Changement_Frequence):
         Figure, SUB = plt.subplots(3, 4)
         SUB[0, 0].plot(Frequence, DO)
         SUB[0, 1].plot(Frequence, DO_D)
@@ -442,6 +259,7 @@ def Changer_Son2(Frequence_Max, Position_Frequence, Frequence, Signal):
     return DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI
 
 def Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
+    #Toute faire les Sythèse de sans les printer
     Synth_DO = ifft(DO, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
     Synth_DO_D = ifft(DO_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
     Synth_RE = ifft(RE, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
@@ -502,8 +320,8 @@ def Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guit
 def Write_Single(Nom_Fichier, Sample_Rate, Valeur):
     write(Nom_Fichier, Sample_Rate, Valeur.astype(np.int16))
 
-def Beethoven(SOL, MI, FA, RE, sample_rate):
-
+def Beethoven(SOL, MI, FA, RE):
+    #Creation de la méliodie
     SOL = np.resize(SOL, int(len(SOL)/12))
     MI = np.resize(MI, int(len(MI)/4))
     FA = np.resize(FA, int(len(FA)/12))
@@ -511,8 +329,8 @@ def Beethoven(SOL, MI, FA, RE, sample_rate):
 
     Melodie = np.concatenate((SOL, SOL, SOL, MI, FA, FA, FA, RE))
 
+    return Melodie
 
-    Write_Single("Beethoven.wav", sample_rate, Melodie)
 
 def plot1(X1, Y1, Titre1):
     Figure1, SUB1 = plt.subplots(1, 1)
@@ -576,11 +394,12 @@ def main():
     Frequence_Pos_Basson, Frequence_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
 
     #Changement de notes
-    DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son2(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
+    DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
     Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
     #Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
-    Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE, Sample_Rate_Guitare)
+    Beethoven_Wave = Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE)
+    Write_Single("Beethoven.wav", Sample_Rate_Guitare, Beethoven_Wave)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
