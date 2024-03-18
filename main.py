@@ -9,16 +9,16 @@ import numpy.fft as fft
 import librosa as librosa
 
 #Boolean pour les fonctions
-Afficher_Graphique = True
-Afficher_Graphique_Changement_Frequence = True
-Afficher_Graphique_Coupe_bande = False
+Afficher_Graphique = False
+Afficher_Graphique_Changement_Frequence = False
+Afficher_Graphique_Coupe_bande = True
 Afficher_Filtres = False
 Print_Valeurs = False
 Print_Tableau_Freq_Notes = False
 Print_Tableau_Ampliude_Notes = False
 Mise_A_Base_1 = True
 Mise_En_Log = True
-Facteur_De_Grosseur = 250
+Facteur_De_Grosseur = 20
 
 #Valeur utiles
 pi = np.pi
@@ -60,7 +60,7 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     #find peaks en utilisant la valeur maximale comme distance
     Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db)))              #Find peaks en fonction du plus haut (Position en X)
-    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.80 * np.max(Signal_FFT_Pos_db)), distance=10)   #Trouver Max en fonction de 10% (Position en X)
+    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.80 * np.max(Signal_FFT_Pos_db)), distance=10) #Trouver Max en fonction de 10% (Position en X)
 
     #Ajustement pour Basson
     if(Position_Maximum2[0] < Position_Maximum[0]):
@@ -68,8 +68,13 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     #Garder juste les 32 premiers
     Position_Maximum = Position_Maximum[:32]                                                                            #Juste garder les 32 premiers index des max
+    Amplitude_Max = Signal_FFT_Pos_db[Position_Maximum]
 
     Freq_Max = Frequence_Pos[Position_Maximum]                                                                          #Trouver les fréquences maximum et non juste les indexs
+
+    #print(Freq_Max.astype(int))                                                                                        #Pour Rapport
+    #print(np.abs(Amplitude_Max))
+    #print(np.angle(Amplitude_Max, deg=True))
 
     return Frequence_Pos, Frequence_Full, Signal_FFT_Pos_db, Signal_FFT_Pos_Not_db, Position_Maximum, Freq_Max
 
@@ -130,7 +135,8 @@ def Coupe_Bande(Audio_Basson, Max, Freq_Coupure, Freq_Coupure2, Sample_Rate, N):
     #Double Caller
     Audio_Filtrer = np.convolve(Audio_Basson, F, mode='same')
     Audio_Filtrer2 = np.convolve(Audio_Filtrer, F, mode='same')
-    Audio_Filtrer2 *= Max
+    Audio_Filtrer3 = np.convolve(Audio_Filtrer2, F, mode='same')
+    Audio_Filtrer3 *= Max
 
     Valeur_FFT = fft.fftshift(np.fft.fft(F))
     Valeur_FFT_Freq = (fft.fftshift(np.fft.fftfreq(N))) * Sample_Rate
@@ -148,8 +154,8 @@ def Coupe_Bande(Audio_Basson, Max, Freq_Coupure, Freq_Coupure2, Sample_Rate, N):
 
     return Audio_Filtrer2, Valeur_FFT, Valeur_FFT_Freq
 
-def ifft(Signal_FFT, Maximum, Enveloppe):
-    Signal_IRFFT = fft.irfft(Signal_FFT, n=160000)                                                                      #Creation de irfft avec uniquement les reels
+def ifft(Signal_FFT, Maximum, Enveloppe, Longueur):
+    Signal_IRFFT = fft.irfft(Signal_FFT, n=Longueur)                                                                    #Creation de irfft avec uniquement les reels
 
     Signal_IRFFT = Signal_IRFFT * Enveloppe * Maximum * Facteur_De_Grosseur                                             #Ajutement du signal avec le son
 
@@ -277,37 +283,48 @@ def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
 
     return DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI
 
-def Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
+def Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
     #Toute faire les Sythèse de sans les printer
-    Synth_DO = ifft(DO, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_DO_D = ifft(DO_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_RE = ifft(RE, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_RE_D = ifft(RE_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_MI = ifft(MI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_FA = ifft(FA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_FA_D = ifft(FA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SOL = ifft(SOL, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SOL_D = ifft(SOL_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_LA = ifft(LA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_LA_D = ifft(LA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SI = ifft(SI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_DO = ifft(DO, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_DO_D = ifft(DO_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_RE = ifft(RE, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_RE_D = ifft(RE_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_MI = ifft(MI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_FA = ifft(FA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_FA_D = ifft(FA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_SOL = ifft(SOL, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_SOL_D = ifft(SOL_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_LA = ifft(LA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_LA_D = ifft(LA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_SI = ifft(SI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
 
     return Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI
 
-def Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
+def Make_Single_Wave(K, Frequence_Max, Position_Frequence, Signal, Valeur_Max_Guitare, Enveloppe_Temps, Longueur):
+    Note = np.zeros(len(Signal))
+
+    for i in range(len(Frequence_Max)):
+        Note[int(Position_Frequence[i] * 2**(K/12))] = np.abs(Signal[Position_Frequence[i]])
+        Note_Freq = Frequence_Max * 2**(K/12)
+
+    Finale = ifft(Note, Valeur_Max_Guitare, Enveloppe_Temps, Longueur)
+
+    return Finale
+
+def Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
     # Synthese du son
-    Synth_DO = ifft(DO, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_DO_D = ifft(DO_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_RE = ifft(RE, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_RE_D = ifft(RE_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_MI = ifft(MI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_FA = ifft(FA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_FA_D = ifft(FA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SOL = ifft(SOL, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SOL_D = ifft(SOL_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_LA = ifft(LA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_LA_D = ifft(LA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SI = ifft(SI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_DO = ifft(DO, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_DO_D = ifft(DO_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_RE = ifft(RE, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_RE_D = ifft(RE_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_MI = ifft(MI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_FA = ifft(FA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_FA_D = ifft(FA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_SOL = ifft(SOL, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_SOL_D = ifft(SOL_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_LA = ifft(LA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_LA_D = ifft(LA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
+    Synth_SI = ifft(SI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, Longueur)
 
     if(Print_Valeurs):
         print('Synth DO', Synth_DO)
@@ -339,10 +356,10 @@ def Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guit
 def Write_Single(Nom_Fichier, Sample_Rate, Valeur):
     write(Nom_Fichier, Sample_Rate, Valeur.astype(np.int16))
 
-def Beethoven(SOL, MI, FA, RE):
+def Beethoven(SOL, RE_D, FA, RE):
     #Creation de la méliodie
     SOL = np.resize(SOL, int(len(SOL)/12))
-    MI = np.resize(MI, int(len(MI)/4))
+    MI = np.resize(RE_D, int(len(RE_D)/4))
     FA = np.resize(FA, int(len(FA)/12))
     RE = np.resize(RE, int(len(RE)/4))
 
@@ -382,14 +399,18 @@ def plot2_2(X1, Y1, X2, Y2, Titre1, Titre2):
     SUB2.set_title(Titre2)
     #plt.show()
 
-def plot3(X1, Y1, X2, Y2, X3, Y3, X4, Y4, Titre1, Titre2):
+def plot3(X1, Y1, X2, Y2, X3, Y3, X4, Y4, Titre1, Titre2, AxeY, AxeX):
     Figure1, (SUB1, SUB2) = plt.subplots(2, 1)
     SUB1.plot(X1, Y1)
     SUB1.plot(X1[X3], Y3[X3], "X", color='red')
     SUB1.set_title(Titre1)
+    SUB1.set_xlabel(AxeX)
+    SUB1.set_ylabel(AxeY)
     SUB2.plot(X2, Y2)
     SUB2.plot(X2[X4], Y4[X4], "X", color='red')
     SUB2.set_title(Titre2)
+    SUB2.set_xlabel(AxeX)
+    SUB2.set_ylabel(AxeY)
     #plt.show()
 
 def main():
@@ -413,22 +434,26 @@ def main():
     Frequence_Pos_Basson, Frequence_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson_Filtrer, Sample_Rate_Basson)
 
     #Changement de notes
-    DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
-    Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
+    DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Not_db_Guitare)
+    Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, len(Audio_Guitare), DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
-    #Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
+    Synth_Basson = Make_Single_Wave(0, Frequence_Maximum_Basson, Positon_Maximum_Basson, Signal_FFT_Not_db_Basson, Valeur_Max_Basson, Enveloppe_Temps_Basson, len(Audio_Basson))
+    Synth_Basson = Synth_Basson * 0.43
 
-    Beethoven_Wave = Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE)
+    Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, len(Audio_Guitare), DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
+
+    Beethoven_Wave = Beethoven(Synth_SOL, Synth_RE_D, Synth_FA, Synth_RE)
 
     Write_Single("Beethoven.wav", Sample_Rate_Guitare, Beethoven_Wave)
     Write_Single("Basson_Filtrer.wav", Sample_Rate_Basson, Audio_Basson_Filtrer)
+    Write_Single("Basson_Synthetiser.wav", Sample_Rate_Basson, Synth_Basson)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
         #plot2(Audio_Guitare, Audio_Guitare_Redresser, 'Audio Guitare Normal', 'Audio Guitare Redresser')    #Audio de base
         #plot2(Audio_Basson, Audio_Basson_Redresser, 'Audio Basson Normal', 'Audio Basson Redresser')        #Audio de base
         #plot2_2(Frequence_Pos_Guitare, Signal_FFT_Guitare,  Frequence_Pos_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')  #Harmoniques sans le points
-        plot3(Frequence_Pos_Guitare, Signal_FFT_Guitare, Frequence_Pos_Basson, Signal_FFT_Basson, Positon_Maximum_Guitare, Signal_FFT_Guitare, Positon_Maximum_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')  #Harmoniques avec les points
+        plot3(Frequence_Pos_Guitare, Signal_FFT_Guitare, Frequence_Pos_Basson, Signal_FFT_Basson, Positon_Maximum_Guitare, Signal_FFT_Guitare, Positon_Maximum_Basson, Signal_FFT_Basson, 'Harmoniques Guitare',  'Harmoniques Basson', 'Signal (dB)', 'Frequence (Hz)',)  #Harmoniques avec les points
         #plot1(np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, 'Enveloppe Guitare')   #Enveloppe seul
         plot1(np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Enveloppe Basson')      #Enveloppe seul
         #plot2_4(np.arange(len(Audio_Guitare)), Audio_Guitare, np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, np.arange(len(Audio_Basson)), Audio_Basson, np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Guitare', 'Basson' ) #Son avec l'enveloppe par dessus
