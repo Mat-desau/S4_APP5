@@ -128,8 +128,6 @@ def Coupe_Bande(Array, Sample_Rate, N):
 def ifft(Signal_FFT, max, Plus_Gros, Enveloppe):
     pos = []
     pos = np.append(pos, 0)
-    neg = []
-    sig = []
     val = 0
 
     for i in range(len(Signal_FFT)):
@@ -147,9 +145,12 @@ def ifft(Signal_FFT, max, Plus_Gros, Enveloppe):
 
     sig = np.concatenate((pos, neg))
 
-    sign_synth = fft.ifft(sig)
+    sign_synth = fft.irfft(sig, n=160000)
 
-    sign_synth = sign_synth[1::] * Enveloppe * Plus_Gros * Facteur_De_Grosseur
+    Figure, SUB = plt.subplots(1, 1)
+    SUB.plot(sign_synth)
+
+    sign_synth = sign_synth * Enveloppe * Plus_Gros * Facteur_De_Grosseur
 
     sign_synth = sign_synth.astype(np.int16)
 
@@ -157,85 +158,72 @@ def ifft(Signal_FFT, max, Plus_Gros, Enveloppe):
 
 def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
     Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]
-    Valeurs_K = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    Valeurs_K = [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1]
 
     #Trouver c'est quoi la fréquence d'entrée pour ajuster le k
-    for i in range(len(Frequence_Differentes)):
-        if(Frequence_Differentes[i] > Frequence_Max[0] - 2 and Frequence_Differentes[i] < Frequence_Max[0] + 2):
-            for ii in range(len(Valeurs_K)):
-                Valeurs_K[ii] = Valeurs_K[ii] - i
-            break
+    #for i in range(len(Frequence_Differentes)):
+        #if(Frequence_Differentes[i] > Frequence_Max[0] - 2 and Frequence_Differentes[i] < Frequence_Max[0] + 2):
+            #for ii in range(len(Valeurs_K)):
+                #Valeurs_K[ii] = Valeurs_K[ii] - i
+            #break
 
     #initialisaion des tableau
-    DO = np.zeros(len(Signal))
-    DO_D = np.zeros(len(Signal))
-    RE = np.zeros(len(Signal))
-    RE_D = np.zeros(len(Signal))
-    MI = np.zeros(len(Signal))
-    FA = np.zeros(len(Signal))
-    FA_D = np.zeros(len(Signal))
-    SOL = np.zeros(len(Signal))
-    SOL_D = np.zeros(len(Signal))
-    LA = np.zeros(len(Signal))
-    LA_D = np.zeros(len(Signal))
-    SI = np.zeros(len(Signal))
+    DO = np.zeros(len(Frequence_Max))
+    DO_D = np.zeros(len(Frequence_Max))
+    RE = np.zeros(len(Frequence_Max))
+    RE_D = np.zeros(len(Frequence_Max))
+    MI = np.zeros(len(Frequence_Max))
+    FA = np.zeros(len(Frequence_Max))
+    FA_D = np.zeros(len(Frequence_Max))
+    SOL = np.zeros(len(Frequence_Max))
+    SOL_D = np.zeros(len(Frequence_Max))
+    LA = np.zeros(len(Frequence_Max))
+    LA_D = np.zeros(len(Frequence_Max))
+    SI = np.zeros(len(Frequence_Max))
 
     #Toute trouver les fréquences et les chnger de places
     for i in range(len(Frequence_Max)):
-        DO[int(Position_Frequence[i] * 2**(Valeurs_K[0]/12))] = np.abs(Signal[Position_Frequence[i]])
+        DO[i] = Position_Frequence[i] * (2**((Valeurs_K[0])/12))
         DO_Freq = Frequence_Max * 2**(Valeurs_K[0]/12)
 
-        DO_D[int(Position_Frequence[i] * 2**(Valeurs_K[1]/12))] = np.abs(Signal[Position_Frequence[i]])
+        DO_D[i] = Position_Frequence[i] * (2**((Valeurs_K[1])/12))
         DO_D_Freq = Frequence_Max * 2 ** (Valeurs_K[1] / 12)
 
-        RE[int(Position_Frequence[i] * 2**(Valeurs_K[2]/12))] = np.abs(Signal[Position_Frequence[i]])
+        RE[i] = Position_Frequence[i] * (2**((Valeurs_K[2])/12))
         RE_Freq = Frequence_Max * 2 ** (Valeurs_K[2] / 12)
 
-        RE_D[int(Position_Frequence[i] * 2**(Valeurs_K[3]/12))] = np.abs(Signal[Position_Frequence[i]])
+        RE_D[i] = Position_Frequence[i] * (2**((Valeurs_K[3])/12))
         RE_D_Freq = Frequence_Max * 2 ** (Valeurs_K[3] / 12)
 
-        MI[int(Position_Frequence[i] * 2**(Valeurs_K[4]/12))] = np.abs(Signal[Position_Frequence[i]])
+        MI[i] = Position_Frequence[i] * (2**((Valeurs_K[4])/12))
         MI_Freq = Frequence_Max * 2 ** (Valeurs_K[4] / 12)
 
-        FA[int(Position_Frequence[i] * 2**(Valeurs_K[5]/12))] = np.abs(Signal[Position_Frequence[i]])
+        FA[i] = Position_Frequence[i] * (2**((Valeurs_K[5])/12))
         FA_Freq = Frequence_Max * 2 ** (Valeurs_K[5] / 12)
 
-        FA_D[int(Position_Frequence[i] * 2**(Valeurs_K[6]/12))] = np.abs(Signal[Position_Frequence[i]])
+        FA_D[i] = Position_Frequence[i] * (2**((Valeurs_K[6])/12))
         FA_D_Freq = Frequence_Max * 2 ** (Valeurs_K[6] / 12)
 
-        SOL[int(Position_Frequence[i] * 2**(Valeurs_K[7]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SOL[i] = Position_Frequence[i] * (2**((Valeurs_K[7])/12))
         SOL_Freq = Frequence_Max * 2 ** (Valeurs_K[7] / 12)
 
-        SOL_D[int(Position_Frequence[i] * 2**(Valeurs_K[8]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SOL_D[i] = Position_Frequence[i] * (2**((Valeurs_K[8])/12))
         SOL_D_Freq = Frequence_Max * 2 ** (Valeurs_K[8] / 12)
 
-        LA[int(Position_Frequence[i] * 2**(Valeurs_K[9]/12))] = np.abs(Signal[Position_Frequence[i]])
+        LA[i] = Position_Frequence[i] * (2**((Valeurs_K[9])/12))
         LA_Freq = Frequence_Max * 2 ** (Valeurs_K[9] / 12)
 
-        LA_D[int(Position_Frequence[i] * 2**(Valeurs_K[10]/12))] = np.abs(Signal[Position_Frequence[i]])
+        LA_D[i] = Position_Frequence[i] * (2**((Valeurs_K[10])/12))
         LA_D_Freq = Frequence_Max * 2 ** (Valeurs_K[10] / 12)
 
-        SI[int(Position_Frequence[i] * 2**(Valeurs_K[11]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SI[i] = Position_Frequence[i] * (2**((Valeurs_K[11])/12))
+        #SI[int(Position_Frequence[i] * 2 ** (Valeurs_K[11] / 12))] = np.abs(Signal[Position_Frequence[i]])
         SI_Freq = Frequence_Max * 2 ** (Valeurs_K[11] / 12)
 
-    # Enlever les Zeros
-    DO = DO[DO != 0]
-    DO_D = DO_D[DO_D != 0]
-    RE = RE[RE != 0]
-    RE_D = RE_D[RE_D != 0]
-    MI = MI[MI != 0]
-    FA = FA[FA != 0]
-    FA_D = FA_D[FA_D != 0]
-    SOL = SOL[SOL != 0]
-    SOL_D = SOL_D[SOL_D != 0]
-    LA = LA[LA != 0]
-    LA_D = LA_D[LA_D != 0]
-    SI = SI[SI != 0]
-
-    #affichage
+    # affichage
     Print_Tableau_Freq = False
     Print_Tableau = False
-    if(Print_Tableau_Freq):
+    if (Print_Tableau_Freq):
         print('DO', DO_Freq)
         print('DO_D', DO_D_Freq)
         print('RE', RE_Freq)
@@ -263,7 +251,19 @@ def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
         print('LA_D', LA_D)
         print('SI', SI)
 
-
+    # Enlever les Zeros
+    DO = DO[DO != 0]
+    DO_D = DO_D[DO_D != 0]
+    RE = RE[RE != 0]
+    RE_D = RE_D[RE_D != 0]
+    MI = MI[MI != 0]
+    FA = FA[FA != 0]
+    FA_D = FA_D[FA_D != 0]
+    SOL = SOL[SOL != 0]
+    SOL_D = SOL_D[SOL_D != 0]
+    LA = LA[LA != 0]
+    LA_D = LA_D[LA_D != 0]
+    SI = SI[SI != 0]
 
     if(Afficher_Changement_Frequence):
         Figure, SUB = plt.subplots(3, 4)
@@ -324,6 +324,19 @@ def Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, Valeur_Max_Guitar
     Synth_LA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
     Synth_LA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
     Synth_SI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SI]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+
+    print('Synth DO', Synth_DO)
+    print('Synth DO_D', Synth_DO_D)
+    print('Synth RE', Synth_RE)
+    print('Synth RE_D', Synth_RE_D)
+    print('Synth MI', Synth_MI)
+    print('Synth FA', Synth_FA)
+    print('Synth FA_D', Synth_FA_D)
+    print('Synth SOL', Synth_SOL)
+    print('Synth SOL_D', Synth_SOL_D)
+    print('Synth LA', Synth_LA)
+    print('Synth LA_D', Synth_LA_D)
+    print('Synth SI', Synth_SI)
 
     write("DO.wav", Sample_Rate_Guitare, Synth_DO)
     write("DO_D.wav", Sample_Rate_Guitare, Synth_DO_D)
@@ -403,6 +416,7 @@ def main():
     DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
 
     Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
+    plt.show()
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
