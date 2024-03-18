@@ -11,7 +11,7 @@ import librosa as librosa
 #Boolean pour les fonctions
 Afficher_Graphique = False
 Afficher_Graphique_Changement_Frequence = False
-Afficher_Graphique_Coupe_bande = True
+Afficher_Graphique_Coupe_bande = False
 Afficher_Filtres = False
 Print_Valeurs = False
 Print_Tableau_Freq_Notes = False
@@ -97,7 +97,7 @@ def Calcul_N(Longeur_Echantillon, Sample_Rate):
 
         H = fft.fft(h, n=Longeur_Echantillon)
 
-        gain = H[pos]
+        gain = np.abs(H[pos])
         N += 1
 
     if(Afficher_Filtres):
@@ -424,6 +424,7 @@ def main():
 
     #Filtres
     Audio_Basson_Filtrer, Valeur_FFT_Basson_Couper, Valeur_FFT_Freq_Couper = Coupe_Bande(Audio_Basson, Valeur_Max_Basson, 20, 1000, Sample_Rate_Basson, 4096)
+    Audio_Basson_Filtrer = Audio_Basson_Filtrer * 20000
 
     # Enveloppe
     Enveloppe_Temps_Guitare = Trouver_Enveloppe(Audio_Guitare, Sample_Rate_Guitare)  # fois 2pi pour le mettre en Hz, puisque le reste est en Hertz
