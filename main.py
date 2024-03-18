@@ -10,7 +10,7 @@ import librosa as librosa
 
 #Boolean pour les fonctions
 Afficher_Graphique = True
-Afficher_Graphique_Changement_Frequence = False
+Afficher_Graphique_Changement_Frequence = True
 Afficher_Graphique_Coupe_bande = False
 Afficher_Filtres = False
 Print_Valeurs = False
@@ -64,7 +64,7 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     #Ajustement pour Basson
     if(Position_Maximum2[0] < Position_Maximum[0]):
-        Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db)/3))   #Si jamais il a un plus petit avant le plus haut
+        Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db)/3))        #Si jamais il a un plus petit avant le plus haut
 
     #Garder juste les 32 premiers
     Position_Maximum = Position_Maximum[:32]                                                                            #Juste garder les 32 premiers index des max
@@ -274,7 +274,6 @@ def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
         SUB[2, 1].set_title('LA')
         SUB[2, 2].set_title('LA_D')
         SUB[2, 3].set_title('SI')
-        plt.show()
 
     return DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI
 
@@ -407,7 +406,7 @@ def main():
 
     # Enveloppe
     Enveloppe_Temps_Guitare = Trouver_Enveloppe(Audio_Guitare, Sample_Rate_Guitare)  # fois 2pi pour le mettre en Hz, puisque le reste est en Hertz
-    Enveloppe_Temps_Basson = Trouver_Enveloppe(Audio_Basson, Sample_Rate_Basson)
+    Enveloppe_Temps_Basson = Trouver_Enveloppe(Audio_Basson_Filtrer, Sample_Rate_Basson)
 
     #Trouver les 32 frequences
     Frequence_Pos_Guitare, Frequence_Full_Guitare, Signal_FFT_Guitare, Signal_FFT_Not_db_Guitare, Positon_Maximum_Guitare, Frequence_Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
@@ -416,6 +415,7 @@ def main():
     #Changement de notes
     DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
     Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
+
     #Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
     Beethoven_Wave = Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE)
@@ -430,9 +430,9 @@ def main():
         #plot2_2(Frequence_Pos_Guitare, Signal_FFT_Guitare,  Frequence_Pos_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')  #Harmoniques sans le points
         plot3(Frequence_Pos_Guitare, Signal_FFT_Guitare, Frequence_Pos_Basson, Signal_FFT_Basson, Positon_Maximum_Guitare, Signal_FFT_Guitare, Positon_Maximum_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')  #Harmoniques avec les points
         #plot1(np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, 'Enveloppe Guitare')   #Enveloppe seul
-        #plot1(np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Enveloppe Basson')      #Enveloppe seul
+        plot1(np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Enveloppe Basson')      #Enveloppe seul
         #plot2_4(np.arange(len(Audio_Guitare)), Audio_Guitare, np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, np.arange(len(Audio_Basson)), Audio_Basson, np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Guitare', 'Basson' ) #Son avec l'enveloppe par dessus
-        plt.show()
+    plt.show()
 
 if __name__ == '__main__':
     main()
