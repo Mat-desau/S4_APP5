@@ -60,11 +60,11 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     #find peaks en utilisant la valeur maximale comme distance
     Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db)))              #Find peaks en fonction du plus haut (Position en X)
-    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.85 * np.max(Signal_FFT_Pos_db)), distance=40)   #Trouver Max en fonction de 10% (Position en X)
+    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.80 * np.max(Signal_FFT_Pos_db)), distance=10)   #Trouver Max en fonction de 10% (Position en X)
 
     #Ajustement pour Basson
     if(Position_Maximum2[0] < Position_Maximum[0]):
-        Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance = (Position_Maximum2[1] - Position_Maximum2[0]))   #Si jamais il a un plus petit avant le plus haut
+        Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db)/3))   #Si jamais il a un plus petit avant le plus haut
 
     #Garder juste les 32 premiers
     Position_Maximum = Position_Maximum[:32]                                                                            #Juste garder les 32 premiers index des max
@@ -147,6 +147,7 @@ def Coupe_Bande(Audio_Basson, Max, Freq_Coupure, Freq_Coupure2, Sample_Rate, N):
         SUB4.set_title('Audio Filtrer')
 
     return Audio_Filtrer2, Valeur_FFT, Valeur_FFT_Freq
+
 def ifft(Signal_FFT, Maximum, Enveloppe):
     Signal_IRFFT = fft.irfft(Signal_FFT, n=160000)                                                                      #Creation de irfft avec uniquement les reels
 
@@ -414,11 +415,13 @@ def main():
 
     #Changement de notes
     DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
-    #Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
+    Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
     #Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
-    #Beethoven_Wave = Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE)
-    #Write_Single("Beethoven.wav", Sample_Rate_Guitare, Beethoven_Wave)
+    Beethoven_Wave = Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE)
+
+    Write_Single("Beethoven.wav", Sample_Rate_Guitare, Beethoven_Wave)
+    Write_Single("Basson_Filtrer.wav", Sample_Rate_Basson, Audio_Basson_Filtrer)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
@@ -428,7 +431,7 @@ def main():
         plot3(Frequence_Pos_Guitare, Signal_FFT_Guitare, Frequence_Pos_Basson, Signal_FFT_Basson, Positon_Maximum_Guitare, Signal_FFT_Guitare, Positon_Maximum_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')  #Harmoniques avec les points
         #plot1(np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, 'Enveloppe Guitare')   #Enveloppe seul
         #plot1(np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Enveloppe Basson')      #Enveloppe seul
-        plot2_4(np.arange(len(Audio_Guitare)), Audio_Guitare, np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, np.arange(len(Audio_Basson)), Audio_Basson, np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Guitare', 'Basson' ) #Son avec l'enveloppe par dessus
+        #plot2_4(np.arange(len(Audio_Guitare)), Audio_Guitare, np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, np.arange(len(Audio_Basson)), Audio_Basson, np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Guitare', 'Basson' ) #Son avec l'enveloppe par dessus
         plt.show()
 
 if __name__ == '__main__':
