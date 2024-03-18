@@ -14,7 +14,7 @@ Afficher_Changement_Frequence = False
 Afficher_Filtres = False
 Mise_A_Base_1 = True
 Mise_En_Log = True
-Facteur_De_Grosseur = 50000
+Facteur_De_Grosseur = 10000
 
 #Valeur utiles
 pi = np.pi
@@ -125,9 +125,9 @@ def Coupe_Bande(Array, Sample_Rate, N):
     SUB2.plot(k, h)
     plt.show()
 
-def ifft(Signal_FFT, max, Plus_Gros, Enveloppe):
-    pos = []
-    pos = np.append(pos, 0)
+def ifft_MARRCHE_PAS(Signal_FFT, max, Plus_Gros, Enveloppe):
+    positif = []
+    positif = np.append(positif, 0)
     val = 0
 
     for i in range(len(Signal_FFT)):
@@ -135,26 +135,30 @@ def ifft(Signal_FFT, max, Plus_Gros, Enveloppe):
             if(max[j] == Signal_FFT[i]):
                 val = max[j]
         if(val != 0):
-            pos = np.append(pos, val)
+            positif = np.append(positif, val)
         else:
-            pos = np.append(pos, 0)
+            positif = np.append(positif, 0)
         val = 0
 
-    neg = pos[1::]
-    neg = neg[::-1]
+    negatif = positif[1::]
+    negatif = negatif[::-1]
 
-    sig = np.concatenate((pos, neg))
+    sig = np.concatenate((positif, negatif))
 
-    sign_synth = fft.irfft(sig, n=160000)
-
-    Figure, SUB = plt.subplots(1, 1)
-    SUB.plot(sign_synth)
+    sign_synth = fft.irfft(positif, n = 160000)
 
     sign_synth = sign_synth * Enveloppe * Plus_Gros * Facteur_De_Grosseur
 
     sign_synth = sign_synth.astype(np.int16)
 
     return sign_synth
+
+def ifft(Signal_FFT, Maximum, Enveloppe):
+    Signal_IRFFT = fft.irfft(Signal_FFT, n=160000)
+
+    Signal_IRFFT = Signal_IRFFT * Enveloppe * Maximum * Facteur_De_Grosseur
+
+    return Signal_IRFFT
 
 def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
     Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]
@@ -310,46 +314,214 @@ def Changer_Son(Frequence_Max, Position_Frequence, Frequence, Signal):
 
     return DO_int, DO_D_int, RE_int, RE_D_int, MI_int, FA_int, FA_D_int, SOL_int, SOL_D_int, LA_int, LA_D_int, SI_int
 
+def Changer_Son2(Frequence_Max, Position_Frequence, Frequence, Signal):
+    Frequence_Differentes = [262, 277, 294, 311, 330, 350, 370, 392, 415, 440, 466, 494]
+    Valeurs_K = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+    #Trouver c'est quoi la fréquence d'entrée pour ajuster le k
+    for i in range(len(Frequence_Differentes)):
+        if(Frequence_Differentes[i] > Frequence_Max[0] - 2 and Frequence_Differentes[i] < Frequence_Max[0] + 2):
+            for ii in range(len(Valeurs_K)):
+                Valeurs_K[ii] = Valeurs_K[ii] - i
+            break
+
+    #initialisaion des tableau
+    DO = np.zeros(len(Signal))
+    DO_D = np.zeros(len(Signal))
+    RE = np.zeros(len(Signal))
+    RE_D = np.zeros(len(Signal))
+    MI = np.zeros(len(Signal))
+    FA = np.zeros(len(Signal))
+    FA_D = np.zeros(len(Signal))
+    SOL = np.zeros(len(Signal))
+    SOL_D = np.zeros(len(Signal))
+    LA = np.zeros(len(Signal))
+    LA_D = np.zeros(len(Signal))
+    SI = np.zeros(len(Signal))
+
+    #Toute trouver les fréquences et les chnger de places
+    for i in range(len(Frequence_Max)):
+        DO[int(Position_Frequence[i] * 2**(Valeurs_K[0]/12))] = np.abs(Signal[Position_Frequence[i]])
+        DO_Freq = Frequence_Max * 2**(Valeurs_K[0]/12)
+
+        DO_D[int(Position_Frequence[i] * 2**(Valeurs_K[1]/12))] = np.abs(Signal[Position_Frequence[i]])
+        DO_D_Freq = Frequence_Max * 2 ** (Valeurs_K[1] / 12)
+
+        RE[int(Position_Frequence[i] * 2**(Valeurs_K[2]/12))] = np.abs(Signal[Position_Frequence[i]])
+        RE_Freq = Frequence_Max * 2 ** (Valeurs_K[2] / 12)
+
+        RE_D[int(Position_Frequence[i] * 2**(Valeurs_K[3]/12))] = np.abs(Signal[Position_Frequence[i]])
+        RE_D_Freq = Frequence_Max * 2 ** (Valeurs_K[3] / 12)
+
+        MI[int(Position_Frequence[i] * 2**(Valeurs_K[4]/12))] = np.abs(Signal[Position_Frequence[i]])
+        MI_Freq = Frequence_Max * 2 ** (Valeurs_K[4] / 12)
+
+        FA[int(Position_Frequence[i] * 2**(Valeurs_K[5]/12))] = np.abs(Signal[Position_Frequence[i]])
+        FA_Freq = Frequence_Max * 2 ** (Valeurs_K[5] / 12)
+
+        FA_D[int(Position_Frequence[i] * 2**(Valeurs_K[6]/12))] = np.abs(Signal[Position_Frequence[i]])
+        FA_D_Freq = Frequence_Max * 2 ** (Valeurs_K[6] / 12)
+
+        SOL[int(Position_Frequence[i] * 2**(Valeurs_K[7]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SOL_Freq = Frequence_Max * 2 ** (Valeurs_K[7] / 12)
+
+        SOL_D[int(Position_Frequence[i] * 2**(Valeurs_K[8]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SOL_D_Freq = Frequence_Max * 2 ** (Valeurs_K[8] / 12)
+
+        LA[int(Position_Frequence[i] * 2**(Valeurs_K[9]/12))] = np.abs(Signal[Position_Frequence[i]])
+        LA_Freq = Frequence_Max * 2 ** (Valeurs_K[9] / 12)
+
+        LA_D[int(Position_Frequence[i] * 2**(Valeurs_K[10]/12))] = np.abs(Signal[Position_Frequence[i]])
+        LA_D_Freq = Frequence_Max * 2 ** (Valeurs_K[10] / 12)
+
+        SI[int(Position_Frequence[i] * 2**(Valeurs_K[11]/12))] = np.abs(Signal[Position_Frequence[i]])
+        SI_Freq = Frequence_Max * 2 ** (Valeurs_K[11] / 12)
+
+    print(len(DO))
+    # Enlever les Zeros
+    #DO = DO[DO != 0]
+    #DO_D = DO_D[DO_D != 0]
+    #RE = RE[RE != 0]
+    #RE_D = RE_D[RE_D != 0]
+    #MI = MI[MI != 0]
+    #FA = FA[FA != 0]
+    #FA_D = FA_D[FA_D != 0]
+    #SOL = SOL[SOL != 0]
+    #SOL_D = SOL_D[SOL_D != 0]
+    #LA = LA[LA != 0]
+    #LA_D = LA_D[LA_D != 0]
+    #SI = SI[SI != 0]
+
+    #affichage
+    Print_Tableau_Freq = False
+    Print_Tableau = False
+    if(Print_Tableau_Freq):
+        print('DO', DO_Freq)
+        print('DO_D', DO_D_Freq)
+        print('RE', RE_Freq)
+        print('RE_D', RE_D_Freq)
+        print('MI', MI_Freq)
+        print('FA', FA_Freq)
+        print('FA_D', FA_D_Freq)
+        print('SOL', SOL_Freq)
+        print('SOL_D', SOL_D_Freq)
+        print('LA', LA_Freq)
+        print('LA_D', LA_D_Freq)
+        print('SI', SI_Freq)
+
+    if (Print_Tableau):
+        print('DO', DO)
+        print('DO_D', DO_D)
+        print('RE', RE)
+        print('RE_D', RE_D)
+        print('MI', MI)
+        print('FA', FA)
+        print('FA_D', FA_D)
+        print('SOL', SOL)
+        print('SOL_D', SOL_D)
+        print('LA', LA)
+        print('LA_D', LA_D)
+        print('SI', SI)
+
+    if(Afficher_Changement_Frequence):
+        Figure, SUB = plt.subplots(3, 4)
+        SUB[0, 0].plot(Frequence, DO)
+        SUB[0, 1].plot(Frequence, DO_D)
+        SUB[0, 2].plot(Frequence, RE)
+        SUB[0, 3].plot(Frequence, RE_D)
+        SUB[1, 0].plot(Frequence, MI)
+        SUB[1, 1].plot(Frequence, FA)
+        SUB[1, 2].plot(Frequence, FA_D)
+        SUB[1, 3].plot(Frequence, SOL)
+        SUB[2, 0].plot(Frequence, SOL_D)
+        SUB[2, 1].plot(Frequence, LA)
+        SUB[2, 2].plot(Frequence, LA_D)
+        SUB[2, 3].plot(Frequence, SI)
+
+        SUB[0, 0].set_title('DO')
+        SUB[0, 1].set_title('DO_D')
+        SUB[0, 2].set_title('RE')
+        SUB[0, 3].set_title('RE_D')
+        SUB[1, 0].set_title('MI')
+        SUB[1, 1].set_title('FA')
+        SUB[1, 2].set_title('FA_D')
+        SUB[1, 3].set_title('SOL')
+        SUB[2, 0].set_title('SOL_D')
+        SUB[2, 1].set_title('LA')
+        SUB[2, 2].set_title('LA_D')
+        SUB[2, 3].set_title('SI')
+        #plt.show()
+
+    #Mettre en int
+    #DO_int = DO.astype(int)
+    #DO_D_int = DO_D.astype(int)
+    #RE_int = RE.astype(int)
+    #RE_D_int = RE_D.astype(int)
+    #MI_int = MI.astype(int)
+    #FA_int = FA.astype(int)
+    #FA_D_int = FA_D.astype(int)
+    #SOL_int = SOL.astype(int)
+    #SOL_D_int = SOL_D.astype(int)
+    #LA_int = LA.astype(int)
+    #LA_D_int = LA_D.astype(int)
+    SI_int = SI.astype(int)
+
+    return DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI
+
 def Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
     # Synthese du son
-    Synth_DO = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[DO]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_DO_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[DO_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_RE = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[RE]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_RE_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[RE_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_MI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[MI]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_FA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[FA]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_FA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[FA_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SOL = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SOL]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SOL_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SOL_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_LA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_LA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
-    Synth_SI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SI]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_DO = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[DO]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_DO_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[DO_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_RE = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[RE]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_RE_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[RE_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_MI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[MI]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_FA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[FA]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_FA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[FA_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_SOL = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SOL]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_SOL_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SOL_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_LA = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_LA_D = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[LA_D]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    #Synth_SI = ifft(np.abs(Signal_FFT_Not_db_Guitare), np.abs(Signal_FFT_Not_db_Guitare[SI]), Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
 
-    print('Synth DO', Synth_DO)
-    print('Synth DO_D', Synth_DO_D)
-    print('Synth RE', Synth_RE)
-    print('Synth RE_D', Synth_RE_D)
-    print('Synth MI', Synth_MI)
-    print('Synth FA', Synth_FA)
-    print('Synth FA_D', Synth_FA_D)
-    print('Synth SOL', Synth_SOL)
-    print('Synth SOL_D', Synth_SOL_D)
-    print('Synth LA', Synth_LA)
-    print('Synth LA_D', Synth_LA_D)
-    print('Synth SI', Synth_SI)
+    Synth_DO = ifft(DO, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_DO_D = ifft(DO_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_RE = ifft(RE, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_RE_D = ifft(RE_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_MI = ifft(MI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_FA = ifft(FA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_FA_D = ifft(FA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_SOL = ifft(SOL, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_SOL_D = ifft(SOL_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_LA = ifft(LA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_LA_D = ifft(LA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_SI = ifft(SI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
 
-    write("DO.wav", Sample_Rate_Guitare, Synth_DO)
-    write("DO_D.wav", Sample_Rate_Guitare, Synth_DO_D)
-    write("RE.wav", Sample_Rate_Guitare, Synth_RE)
-    write("RE_D.wav", Sample_Rate_Guitare, Synth_RE_D)
-    write("MI.wav", Sample_Rate_Guitare, Synth_MI)
-    write("FA.wav", Sample_Rate_Guitare, Synth_FA)
-    write("FA_D.wav", Sample_Rate_Guitare, Synth_FA_D)
-    write("SOL.wav", Sample_Rate_Guitare, Synth_SOL)
-    write("SOL_D.wav", Sample_Rate_Guitare, Synth_SOL_D)
-    write("LA.wav", Sample_Rate_Guitare, Synth_LA)
-    write("LA_D.wav", Sample_Rate_Guitare, Synth_LA_D)
-    write("SI.wav", Sample_Rate_Guitare, Synth_SI)
+    if(True):
+        print('Synth DO', Synth_DO)
+        print('Synth DO_D', Synth_DO_D)
+        print('Synth RE', Synth_RE)
+        print('Synth RE_D', Synth_RE_D)
+        print('Synth MI', Synth_MI)
+        print('Synth FA', Synth_FA)
+        print('Synth FA_D', Synth_FA_D)
+        print('Synth SOL', Synth_SOL)
+        print('Synth SOL_D', Synth_SOL_D)
+        print('Synth LA', Synth_LA)
+        print('Synth LA_D', Synth_LA_D)
+        print('Synth SI', Synth_SI)
+
+    write("DO.wav", Sample_Rate_Guitare, Synth_DO.astype(np.int16))
+    write("DO_D.wav", Sample_Rate_Guitare, Synth_DO_D.astype(np.int16))
+    write("RE.wav", Sample_Rate_Guitare, Synth_RE.astype(np.int16))
+    write("RE_D.wav", Sample_Rate_Guitare, Synth_RE_D.astype(np.int16))
+    write("MI.wav", Sample_Rate_Guitare, Synth_MI.astype(np.int16))
+    write("FA.wav", Sample_Rate_Guitare, Synth_FA.astype(np.int16))
+    write("FA_D.wav", Sample_Rate_Guitare, Synth_FA_D.astype(np.int16))
+    write("SOL.wav", Sample_Rate_Guitare, Synth_SOL.astype(np.int16))
+    write("SOL_D.wav", Sample_Rate_Guitare, Synth_SOL_D.astype(np.int16))
+    write("LA.wav", Sample_Rate_Guitare, Synth_LA.astype(np.int16))
+    write("LA_D.wav", Sample_Rate_Guitare, Synth_LA_D.astype(np.int16))
+    write("SI.wav", Sample_Rate_Guitare, Synth_SI.astype(np.int16))
 
 def plot1(X1, Y1, Titre1):
     Figure1, SUB1 = plt.subplots(1, 1)
@@ -413,10 +585,10 @@ def main():
     Frequence_Pos_Basson, Frequence_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
 
     #Changement de notes
-    DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
+    DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son2(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
 
     Make_Waves(Signal_FFT_Not_db_Guitare, Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
-    plt.show()
+    #plt.show()
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
