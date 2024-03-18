@@ -9,7 +9,7 @@ import numpy.fft as fft
 import librosa as librosa
 
 #Boolean pour les fonctions
-Afficher_Graphique = True
+Afficher_Graphique = False
 Afficher_Graphique_Changement_Frequence = False
 Afficher_Filtres = False
 Print_Valeurs = False
@@ -105,27 +105,32 @@ def Passe_Bas(Len_Array, N):
     h = h[0:int(len(h)/2)]
     return h
 
-def Coupe_Bande(Sample_Rate, N):
-    w0 = 2 * pi * 1000 #en rad
-    w1 = 20 # en Hz
-    K = (((w1/Sample_Rate) * 2) * 2) + (1/N)
+def Coupe_Bande(Audio_Basson, Sample_Rate, N):
+    w0 = (2 * pi * 1000) / Sample_Rate #en rad
     k = np.linspace(-(N-1)/2, (N-1)/2, N)
+    #w1 = pi * ((k-1)/N)
+    w1 = 20         # en Hz
+    K = (((w1 / Sample_Rate) * 2) * 2) + (1 / N)
 
-    h = (1 / N) * (np.sin(pi * k * K) / np.sin((pi * k) / N))
+    h = (1 / N) * (np.sin((pi * k * K)) / np.sin((pi * k) / N))
     #h = (1 / N) * (np.sin((pi * k * K) / N)/np.sin((pi * k) / N))            # Voici la vrai formule mais avec cette formule ça marche pas
 
-    diract = np.zeros(N)
-    diract[int(N / 2)] = 1
+    diract = np.ones(N)
+    #diract[int(N / 2)] = 1
 
-    #F = diract - 2 * h * np.cos(w0 * k)
-    F = - 2 * h * np.cos(w0 * k)
+    F = diract - 2 * h * np.cos(w0 * k)
+    #F = - 2 * h * np.cos(w0 * k)
 
     Valeur_FFT = fft.fftshift(np.fft.fft(h))
     Valeur_FFT_Freq = (fft.fftshift(np.fft.fftfreq(N))) * Sample_Rate
 
-    Figure1, (SUB1, SUB2) = plt.subplots(2, 1)
+    Figure1, (SUB1, SUB2, SUB3) = plt.subplots(3, 1)
     SUB1.plot(Valeur_FFT_Freq, np.abs(Valeur_FFT))
+    SUB1.set_title('FFT')
     SUB2.plot(k, h)
+    SUB2.set_title('h')
+    SUB3.plot(F)
+    SUB3.set_title('F')
     plt.show()
 
 def ifft(Signal_FFT, Maximum, Enveloppe):
@@ -331,7 +336,6 @@ def Beethoven(SOL, MI, FA, RE):
 
     return Melodie
 
-
 def plot1(X1, Y1, Titre1):
     Figure1, SUB1 = plt.subplots(1, 1)
     SUB1.plot(X1, Y1)
@@ -384,32 +388,33 @@ def main():
     Audio_Basson_Redresser = abs(Audio_Basson)
 
     #Filtres
-    #Coupe_Bande(Audio_Basson, Sample_Rate_Basson, 4096)
+    Coupe_Bande(Audio_Basson, Sample_Rate_Basson, 4096)
+
     # Enveloppe
-    Enveloppe_Temps_Guitare = Trouver_Enveloppe(Audio_Guitare, Sample_Rate_Guitare)  # fois 2pi pour le mettre en Hz, puisque le reste est en Hertz
-    Enveloppe_Temps_Basson = Trouver_Enveloppe(Audio_Basson, Sample_Rate_Basson)
+    #Enveloppe_Temps_Guitare = Trouver_Enveloppe(Audio_Guitare, Sample_Rate_Guitare)  # fois 2pi pour le mettre en Hz, puisque le reste est en Hertz
+    #Enveloppe_Temps_Basson = Trouver_Enveloppe(Audio_Basson, Sample_Rate_Basson)
 
     #Trouver les 32 frequences
-    Frequence_Pos_Guitare, Frequence_Full_Guitare, Signal_FFT_Guitare, Signal_FFT_Not_db_Guitare, Positon_Maximum_Guitare, Frequence_Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
-    Frequence_Pos_Basson, Frequence_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
+    #Frequence_Pos_Guitare, Frequence_Full_Guitare, Signal_FFT_Guitare, Signal_FFT_Not_db_Guitare, Positon_Maximum_Guitare, Frequence_Maximum_Guitare = Trouver32Sinus(Audio_Guitare, Sample_Rate_Guitare)
+    #Frequence_Pos_Basson, Frequence_Full_Basson, Signal_FFT_Basson, Signal_FFT_Not_db_Basson, Positon_Maximum_Basson, Frequence_Maximum_Basson = Trouver32Sinus(Audio_Basson, Sample_Rate_Basson)
 
     #Changement de notes
-    DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
-    Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
+    #DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
+    #Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
     #Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
-    Beethoven_Wave = Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE)
-    Write_Single("Beethoven.wav", Sample_Rate_Guitare, Beethoven_Wave)
+    #Beethoven_Wave = Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE)
+    #Write_Single("Beethoven.wav", Sample_Rate_Guitare, Beethoven_Wave)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
         #plot2(Audio_Guitare, Audio_Guitare_Redresser, 'Audio Guitare Normal', 'Audio Guitare Redresser')    #Audio de base
         #plot2(Audio_Basson, Audio_Basson_Redresser, 'Audio Basson Normal', 'Audio Basson Redresser')        #Audio de base
         #plot2_2(Frequence_Pos_Guitare, Signal_FFT_Guitare,  Frequence_Pos_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')  #Harmoniques sans le points
-        plot3(Frequence_Pos_Guitare, Signal_FFT_Guitare, Frequence_Pos_Basson, Signal_FFT_Basson, Positon_Maximum_Guitare, Signal_FFT_Guitare, Positon_Maximum_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')
+        #plot3(Frequence_Pos_Guitare, Signal_FFT_Guitare, Frequence_Pos_Basson, Signal_FFT_Basson, Positon_Maximum_Guitare, Signal_FFT_Guitare, Positon_Maximum_Basson, Signal_FFT_Basson, 'Harmoniques Guitare', 'Harmoniques Basson')  #Harmoniques avec les points
         #plot1(np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, 'Enveloppe Guitare')   #Enveloppe seul
         #plot1(np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Enveloppe Basson')      #Enveloppe seul
-        plot2_4(np.arange(len(Audio_Guitare)), Audio_Guitare, np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, np.arange(len(Audio_Basson)), Audio_Basson, np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Guitare', 'Basson' )
+        #plot2_4(np.arange(len(Audio_Guitare)), Audio_Guitare, np.arange(len(Enveloppe_Temps_Guitare)), Enveloppe_Temps_Guitare, np.arange(len(Audio_Basson)), Audio_Basson, np.arange(len(Enveloppe_Temps_Basson)), Enveloppe_Temps_Basson, 'Guitare', 'Basson' ) #Son avec l'enveloppe par dessus
         plt.show()
 
 if __name__ == '__main__':
