@@ -105,32 +105,45 @@ def Passe_Bas(Len_Array, N):
     h = h[0:int(len(h)/2)]
     return h
 
-def Coupe_Bande(Audio_Basson, Sample_Rate, N):
-    w0 = (2 * pi * 1000) / Sample_Rate #en rad
+def Coupe_Bande(Audio_Basson, Freq_Coupure, Freq_Coupure2, Sample_Rate, N):
+    w0 = (2 * pi * Freq_Coupure2) / Sample_Rate #en rad
     k = np.linspace(-(N-1)/2, (N-1)/2, N)
     #w1 = pi * ((k-1)/N)
-    w1 = 20         # en Hz
+    w1 = Freq_Coupure         # en Hz
     K = (((w1 / Sample_Rate) * 2) * 2) + (1 / N)
 
     h = (1 / N) * (np.sin((pi * k * K)) / np.sin((pi * k) / N))
-    #h = (1 / N) * (np.sin((pi * k * K) / N)/np.sin((pi * k) / N))            # Voici la vrai formule mais avec cette formule ça marche pas
 
-    diract = np.ones(N)
-    #diract[int(N / 2)] = 1
+    #Mettre a 0
+    zero, = np.nonzero(k == 0)
+    if len(zero):
+        h[zero] = K
+
+    h /= np.sum(h)
+
+    diract = np.zeros(len(h))
+    diract[int(len(h)/2)] = 1
 
     F = diract - 2 * h * np.cos(w0 * k)
-    #F = - 2 * h * np.cos(w0 * k)
 
-    Valeur_FFT = fft.fftshift(np.fft.fft(h))
+    F_Positif = F[0:int(len(F)/2)]
+
+    Audio_Filtrer = np.convolve(F_Positif, Audio_Basson)
+
+    Valeur_FFT = fft.fftshift(np.fft.fft(F))
     Valeur_FFT_Freq = (fft.fftshift(np.fft.fftfreq(N))) * Sample_Rate
 
-    Figure1, (SUB1, SUB2, SUB3) = plt.subplots(3, 1)
+    Figure1, (SUB1, SUB2, SUB3, SUB4) = plt.subplots(4, 1)
     SUB1.plot(Valeur_FFT_Freq, np.abs(Valeur_FFT))
     SUB1.set_title('FFT')
     SUB2.plot(k, h)
     SUB2.set_title('h')
     SUB3.plot(F)
     SUB3.set_title('F')
+    SUB4.plot(Audio_Filtrer)
+    plt.figure()
+    Figure1, SUB1 = plt.subplots(1, 1)
+    SUB1.plot(Audio_Filtrer)
     plt.show()
 
 def ifft(Signal_FFT, Maximum, Enveloppe):
@@ -388,7 +401,7 @@ def main():
     Audio_Basson_Redresser = abs(Audio_Basson)
 
     #Filtres
-    Coupe_Bande(Audio_Basson, Sample_Rate_Basson, 4096)
+    Coupe_Bande(Audio_Basson, 20, 1000, Sample_Rate_Basson, 4096)
 
     # Enveloppe
     #Enveloppe_Temps_Guitare = Trouver_Enveloppe(Audio_Guitare, Sample_Rate_Guitare)  # fois 2pi pour le mettre en Hz, puisque le reste est en Hertz
