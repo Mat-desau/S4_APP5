@@ -12,10 +12,10 @@ import librosa as librosa
 Afficher_Graphique = False
 Afficher_Changement_Frequence = False
 Afficher_Filtres = False
-Print_Valeurs = False
+Print_Valeurs = True
 Mise_A_Base_1 = True
 Mise_En_Log = True
-Facteur_De_Grosseur = 1000
+Facteur_De_Grosseur = 250
 
 #Valeur utiles
 pi = np.pi
@@ -103,7 +103,7 @@ def Passe_Bas(Len_Array, N):
     h = h[0:int(len(h)/2)]
     return h
 
-def Coupe_Bande(Array, Sample_Rate, N):
+def Coupe_Bande(Sample_Rate, N):
     w0 = 2 * pi * 1000 #en rad
     w1 = 20 # en Hz
     K = (((w1/Sample_Rate) * 2) * 2) + (1/N)
