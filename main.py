@@ -441,6 +441,22 @@ def Changer_Son2(Frequence_Max, Position_Frequence, Frequence, Signal):
 
     return DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI
 
+def Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
+    Synth_DO = ifft(DO, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_DO_D = ifft(DO_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_RE = ifft(RE, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_RE_D = ifft(RE_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_MI = ifft(MI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_FA = ifft(FA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_FA_D = ifft(FA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_SOL = ifft(SOL, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_SOL_D = ifft(SOL_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_LA = ifft(LA, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_LA_D = ifft(LA_D, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+    Synth_SI = ifft(SI, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
+
+    return Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI
+
 def Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI):
     # Synthese du son
     Synth_DO = ifft(DO, Valeur_Max_Guitare, Enveloppe_Temps_Guitare)
@@ -482,6 +498,21 @@ def Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guit
     write("LA.wav", Sample_Rate_Guitare, Synth_LA.astype(np.int16))
     write("LA_D.wav", Sample_Rate_Guitare, Synth_LA_D.astype(np.int16))
     write("SI.wav", Sample_Rate_Guitare, Synth_SI.astype(np.int16))
+
+def Write_Single(Nom_Fichier, Sample_Rate, Valeur):
+    write(Nom_Fichier, Sample_Rate, Valeur.astype(np.int16))
+
+def Beethoven(SOL, MI, FA, RE, sample_rate):
+
+    SOL = np.resize(SOL, int(len(SOL)/12))
+    MI = np.resize(MI, int(len(MI)/4))
+    FA = np.resize(FA, int(len(FA)/12))
+    RE = np.resize(RE, int(len(RE)/4))
+
+    Melodie = np.concatenate((SOL, SOL, SOL, MI, FA, FA, FA, RE))
+
+
+    Write_Single("Beethoven.wav", sample_rate, Melodie)
 
 def plot1(X1, Y1, Titre1):
     Figure1, SUB1 = plt.subplots(1, 1)
@@ -546,9 +577,10 @@ def main():
 
     #Changement de notes
     DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son2(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
+    Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
+    #Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
-    Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
-    #plt.show()
+    Beethoven(Synth_SOL, Synth_MI, Synth_FA, Synth_RE, Sample_Rate_Guitare)
 
     #Afficher sur les graphique au besoin
     if(Afficher_Graphique):
