@@ -16,7 +16,7 @@ Afficher_Filtres = False
 Print_Valeurs = False
 Print_Tableau_Freq_Notes = False
 Print_Tableau_Ampliude_Notes = False
-Mise_A_Base_1 = True
+Mise_A_Base_1 = False
 Mise_En_Log = True
 Facteur_De_Grosseur = 20
 
@@ -60,7 +60,7 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     #find peaks en utilisant la valeur maximale comme distance
     Position_Maximum, _ = signal.find_peaks(Signal_FFT_Pos_db, distance=int(np.argmax(Signal_FFT_Pos_db)))              #Find peaks en fonction du plus haut (Position en X)
-    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.80 * np.max(Signal_FFT_Pos_db)), distance=10) #Trouver Max en fonction de 10% (Position en X)
+    Position_Maximum2, _ = signal.find_peaks(Signal_FFT_Pos_db, height=(0.90 * np.max(Signal_FFT_Pos_db)), distance=10) #Trouver Max en fonction de 10% (Position en X)
 
     #Ajustement pour Basson
     if(Position_Maximum2[0] < Position_Maximum[0]):
@@ -72,9 +72,11 @@ def Trouver32Sinus(Array, Sample_Rate):
 
     Freq_Max = Frequence_Pos[Position_Maximum]                                                                          #Trouver les fréquences maximum et non juste les indexs
 
-    #print(Freq_Max.astype(int))                                                                                        #Pour Rapport
-    #print(np.abs(Amplitude_Max))
-    #print(np.angle(Amplitude_Max, deg=True))
+    #print('Amplitude')
+    #for i in range(len(Freq_Max)):
+        #print(Freq_Max.astype(int))                                                                                        #Pour Rapport
+        #print(round(np.abs(Amplitude_Max[i]), 2))
+        #print(round(np.angle(Amplitude_Max[i], deg=True),2))
 
     return Frequence_Pos, Frequence_Full, Signal_FFT_Pos_db, Signal_FFT_Pos_Not_db, Position_Maximum, Freq_Max
 
@@ -435,9 +437,21 @@ def main():
 
     #Changement de notes
     DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Not_db_Guitare)
+    _, _, _, _, _, _, _, _, _, _, LA_D_DB, _ = Changer_Son(Frequence_Maximum_Guitare, Positon_Maximum_Guitare, Frequence_Pos_Guitare, Signal_FFT_Guitare)
     Synth_DO, Synth_DO_D, Synth_RE, Synth_RE_D, Synth_MI, Synth_FA, Synth_FA_D, Synth_SOL, Synth_SOL_D, Synth_LA, Synth_LA_D, Synth_SI = Full_IFFT(Valeur_Max_Guitare, Enveloppe_Temps_Guitare, len(Audio_Guitare), DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
     Synth_Basson, Valeur_Basson = Make_Single_Wave(0, Frequence_Maximum_Basson, Positon_Maximum_Basson, Signal_FFT_Not_db_Basson, Valeur_Max_Basson, Enveloppe_Temps_Basson, len(Audio_Basson))
+    _, BASSON_DB = Make_Single_Wave(0, Frequence_Maximum_Basson, Positon_Maximum_Basson, Signal_FFT_Basson, Valeur_Max_Basson, Enveloppe_Temps_Basson, len(Audio_Basson))
+
+    Figure, (SUB1, SUB2) = plt.subplots(2, 1)
+    SUB1.plot(Frequence_Pos_Guitare, LA_D_DB)
+    SUB1.set_title('Guitare LA# Synthétisé')
+    SUB1.set_xlabel('Frequence (Hz)')
+    SUB1.set_ylabel('Amplitude (dB)')
+    SUB2.plot(Frequence_Pos_Basson, BASSON_DB)
+    SUB2.set_title('Basson Synthétisé')
+    SUB2.set_xlabel('Frequence (Hz)')
+    SUB2.set_ylabel('Amplitude (dB)')
 
     Make_All_Waves(Sample_Rate_Guitare, Valeur_Max_Guitare, Enveloppe_Temps_Guitare, len(Audio_Guitare), DO, DO_D, RE, RE_D, MI, FA, FA_D, SOL, SOL_D, LA, LA_D, SI)
 
@@ -446,9 +460,6 @@ def main():
     #Ajustement
     Audio_Basson_Filtrer = Audio_Basson_Filtrer * 20000
     Synth_Basson = Synth_Basson * 0.43
-    plt.plot(Audio_Basson_Filtrer)
-    plt.figure()
-    plt.plot(Synth_Basson)
 
     #Write_Single("Beethoven.wav", Sample_Rate_Guitare, Beethoven_Wave)
     #Write_Single("Basson_Filtrer.wav", Sample_Rate_Basson, Audio_Basson_Filtrer)
